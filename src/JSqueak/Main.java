@@ -31,22 +31,16 @@ THE SOFTWARE.
 
 package JSqueak;
 
-public class Main 
-{
-    public Main() 
-    {
+public class Main {
+    public Main() {
         // nothing to do
     }
-    
-    public static void main(String[] args) 
-    {
-        try 
-        {
+
+    public static void main(String[] args) {
+        try {
             Starter.main(new String[0]);
-        }
-        catch (Exception ex ) 
-        {
-            System.err.println(ex);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
