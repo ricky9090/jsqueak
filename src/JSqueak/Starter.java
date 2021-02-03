@@ -30,10 +30,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 public class Starter {
-    /**
-     * The file name of the mini image.
-     */
-    private static final String MINI_IMAGE = "mini.image.gz";
 
     /**
      * Locate a startable image as a resource.
@@ -42,15 +38,15 @@ public class Starter {
         //File saved= new File( pathname );
         //if (saved.exists()) return new SqueakImage(saved);
         // and only if no image name was given
-        URL imageUrl = Starter.class.getResource(MINI_IMAGE);
+        URL imageUrl = Starter.class.getResource(BuildConfig.getImageName());
         if ("file".equals(imageUrl.getProtocol()))
             return new SqueakImage(new File(imageUrl.getPath()));
 
-        InputStream ims = Starter.class.getResourceAsStream(MINI_IMAGE);
+        InputStream ims = Starter.class.getResourceAsStream(BuildConfig.getImageName());
         if (ims != null)
             return new SqueakImage(ims);
 
-        throw new FileNotFoundException("Cannot locate resource " + MINI_IMAGE);
+        throw new FileNotFoundException("Cannot locate resource " + BuildConfig.getImageName());
     }
 
     /**
@@ -72,6 +68,7 @@ public class Starter {
         SqueakImage img = args.length > 0 ? locateSavedImage(args[1])
                 : locateStartableImage();
         SqueakVM vm = new SqueakVM(img);
+        SqueakVM.INSTANCE = vm;
         vm.run();
     }
 

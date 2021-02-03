@@ -31,12 +31,17 @@ THE SOFTWARE.
 
 package JSqueak;
 
+import JSqueak.ui.MyColorModel;
+import JSqueak.ui.MyColorModelInt;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Hashtable;
 
 public class Screen {
     Dimension fExtent;
@@ -44,23 +49,17 @@ public class Screen {
     private JFrame fFrame;
     private JLabel fDisplay;
     private byte fDisplayBits[];
+    private int fDisplayBitsInt[];
     private MouseStatus fMouseStatus;
     private KeyboardQueue fKeyboardQueue;
     private Timer fHeartBeat;
     private boolean fScreenChanged;
     private Object fVMSemaphore;
 
-    private final static boolean WITH_HEARTBEAT = false;
-    private final static int FPS = 10;
+    private final static boolean WITH_HEARTBEAT = true;
+    private final static int FPS = 30;
 
     // cf. http://doc.novsu.ac.ru/oreilly/java/awt/ch12_02.htm
-    private final static byte kComponents[] =
-            new byte[]{(byte) 255, 0, (byte) 240, (byte) 230,
-                    (byte) 220, (byte) 210, (byte) 200, (byte) 190, (byte) 180, (byte) 170,
-                    (byte) 160, (byte) 150, 110, 70, 30, 10};
-
-    private final static ColorModel kBlackAndWhiteModel =
-            new IndexColorModel(1, 2, kComponents, kComponents, kComponents);
 
     public Screen(String title, int width, int height, int depth, Object vmSema) {
         fVMSemaphore = vmSema;
@@ -84,6 +83,8 @@ public class Screen {
         fDisplay = new JLabel(noDisplay);
         fDisplay.setSize(fExtent);
         content.add(fDisplay, BorderLayout.CENTER);
+
+
         fFrame.setContentPane(content);
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         fFrame.setLocation((screen.width - fExtent.width) / 2, (screen.height - fExtent.height) / 2);   // center
@@ -96,7 +97,7 @@ public class Screen {
         fKeyboardQueue = new KeyboardQueue((SqueakVM) fVMSemaphore);
         fDisplay.addKeyListener(fKeyboardQueue);
 
-        fDisplay.setOpaque(true);
+        fDisplay.setOpaque(false);
         fDisplay.getRootPane().setDoubleBuffered(false);    // prevents losing intermediate redraws (how?!)
     }
 
@@ -109,16 +110,187 @@ public class Screen {
         fDisplay.setIcon(createDisplayAdapter(fDisplayBits = rawBits));
     }
 
+    public void setBitsAlter(int rawBits[], int depth) {
+        fDepth = depth;
+        fDisplay.setIcon(createDisplayAdapterInt(fDisplayBitsInt = rawBits));
+    }
+
+    public void setBitsV2(int rawBits[], int depth) {
+        fDepth = depth;
+        fDisplay.setIcon(createDisplayAdapterIntV2(fDisplayBitsInt = rawBits));
+    }
+
     byte[] getBits() {
         return fDisplayBits;
     }
 
+    /**
+     * The original createDisplayAdapter.<br>
+     * Adding serveral implementation of creating ImageIcon,
+     * as a attempt to test different kind {@link ColorModel}
+     */
     protected Icon createDisplayAdapter(byte storage[]) {
-        DataBuffer buf = new DataBufferByte(storage, (fExtent.height * fExtent.width / 8) * fDepth);       // single bank
-        SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE, fExtent.width, fExtent.height, fDepth /* bpp */);
-        WritableRaster raster = Raster.createWritableRaster(sm, buf, new Point(0, 0));
-        Image image = new BufferedImage(kBlackAndWhiteModel, raster, true, null);
+        return new ImageIcon(getImagePolicy(storage));
+    }
+
+    /**
+     * int buffer with 32bit color<br>
+     * this implementation is very slow
+     */
+    @Deprecated
+    protected Icon createDisplayAdapterInt(int storage[]) {
+        int[] BITMASKS = {
+                0xFF0000,
+                0x00FF00,
+                0x0000FF
+        };
+        Hashtable<?,?> EMPTY_HASH = new Hashtable();
+        System.out.println("dataArray size: " + storage.length);
+        DataBufferInt dataBuffer = new DataBufferInt(storage, storage.length);
+
+
+        SampleModel sm1 = new SinglePixelPackedSampleModel(DataBuffer.TYPE_INT, fExtent.width, fExtent.height, BITMASKS);
+        WritableRaster raster = Raster.createWritableRaster(sm1, dataBuffer,
+                new Point(0, 0));
+        MyColorModelInt colorModel;
+        if (fDepth == 1) {
+            colorModel = new MyColorModelInt();
+        } else {
+            colorModel = new MyColorModelInt(Transparency.OPAQUE);
+        }
+
+        Image image =  new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), EMPTY_HASH);
+
         return new ImageIcon(image);
+    }
+
+    /**
+     *  Create display adapter using int buffer, which is directly copy from bitblt 32bit bitmap data<br>
+     *  As comment saying in copyBitmapToByteArray:
+     *  <pre>
+     *      Copy our 32-bit words into a byte array  until we find out
+     *      how to make AWT happy with int buffers
+     *  </pre>
+     *  Now its same to be happy working with it :-)
+     */
+    private Icon createDisplayAdapterIntV2(int storage[]) {
+        System.out.println("createDisplayAdapter storage[] length: " + storage.length);
+        System.out.println("createDisplayAdapter Extent.width: " + fExtent.width + " Extent.height: " + fExtent.height + " Depth: " + fDepth);
+        DataBuffer buf = new DataBufferInt(storage, (fExtent.height * fExtent.width) * fDepth);
+        SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_INT, fExtent.width, fExtent.height, fDepth);
+        WritableRaster raster = Raster.createWritableRaster(sm, buf, new Point(0, 0));
+        Image image;
+        if (fDepth == 1) {
+            // Black&White color model
+            ColorModel colorModel = ScreenUtils.getBlackWhiteModel();
+            image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
+        } else {
+            // now it is 8bit depth, using 256 color model
+            ColorModel colorModel = ScreenUtils.get256ColorModel();
+            image = new BufferedImage(colorModel, raster, false, null);
+        }
+        // TODO adding support for more color depth
+        return new ImageIcon(image);
+    }
+
+    private Image getImagePolicy(byte storage[]) {
+        switch(BuildConfig.DISPLAY_POLICY) {
+            case 1:
+                return getImageV1(storage);
+            case 4:
+                return getImageV4(storage);
+            case 5:
+                return getImageV5(storage);
+            default:
+                return getImageV1(storage);
+        }
+    }
+
+    private Image getImageV1(byte storage[]) {
+        System.out.println("createDisplayAdapter storage[] length: " + storage.length);
+        System.out.println("createDisplayAdapter Extent.width: " + fExtent.width + " Extent.height: " + fExtent.height + " Depth: " + fDepth);
+        DataBuffer buf = new DataBufferByte(storage, (fExtent.height * fExtent.width) * fDepth);
+        SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE, fExtent.width, fExtent.height, fDepth);
+        WritableRaster raster = Raster.createWritableRaster(sm, buf, new Point(0, 0));
+        if (fDepth == 1) {
+            ColorModel colorModel = ScreenUtils.getBlackWhiteModel();
+            return new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
+        } else {
+            ColorModel colorModel = ScreenUtils.get256ColorModel();
+            return new BufferedImage(colorModel, raster, false, null);
+        }
+    }
+
+    private Image getImageV2(byte storage[]) {
+        int pixelStride, transparency;
+        boolean hasAlpha = true;
+        if (hasAlpha) {
+            pixelStride = 4;
+            transparency = Transparency.TRANSLUCENT;
+        } else {
+            pixelStride = 3;
+            transparency = Transparency.OPAQUE;
+        }
+        int[] numBits = new int[pixelStride];
+        int[] bandoffsets = new int[pixelStride];
+
+        for (int i = 0; i < pixelStride; i++) {
+            numBits[i] = 8;
+            bandoffsets[i] = i;
+        }
+
+        ComponentColorModel ccm = new ComponentColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                numBits,
+                hasAlpha,
+                false, //Alpha pre-multiplied
+                transparency,
+                DataBuffer.TYPE_BYTE);
+        PixelInterleavedSampleModel csm = new PixelInterleavedSampleModel(
+                DataBuffer.TYPE_BYTE,
+                fExtent.width, fExtent.height,
+                pixelStride, //Pixel stride
+                fExtent.width * pixelStride, // Scanline stride
+                bandoffsets);
+
+        DataBuffer dataBuf = new DataBufferByte(storage, fExtent.width * fExtent.height * pixelStride);
+        WritableRaster wr = Raster.createWritableRaster(csm, dataBuf, new Point(0, 0));
+        return new BufferedImage(ccm, wr, false, null);
+    }
+
+    private Image getImageV3(byte storage[]) {
+        DataBufferByte d = new DataBufferByte(storage, storage.length);
+        int[] bof = {0, 1, 2};
+        int width = fExtent.width;
+        int height = fExtent.height;
+        return new BufferedImage(
+                new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), false, true, Transparency.OPAQUE, DataBuffer.TYPE_BYTE),
+                Raster.createWritableRaster(new ComponentSampleModel(DataBuffer.TYPE_BYTE, width, height, 3, 3 * width, bof), d, null), true, null);
+    }
+
+    private Image getImageV4(byte storage[]) {
+        System.out.println("createDisplayAdapter storage[] length: " + storage.length);
+        System.out.println("createDisplayAdapter Extent.width: " + fExtent.width + " Extent.height: " + fExtent.height + " Depth: " + fDepth);
+        DataBuffer buf = new DataBufferByte(storage, (fExtent.height * fExtent.width) * fDepth);
+        SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE, fExtent.width, fExtent.height, fDepth);
+        WritableRaster raster = Raster.createWritableRaster(sm, buf, new Point(0, 0));
+        return new BufferedImage(ScreenUtils.get256ColorModel(), raster, false, null);
+    }
+
+    private Image getImageV5(byte storage[]) {
+        Hashtable<?,?> EMPTY_HASH = new Hashtable();
+        int[] BAND_OFFSETS_32 = { 0, 1, 2, 3 };
+        System.out.println("dataArray size: " + storage.length);
+        DataBufferByte dataBuffer = new DataBufferByte(storage, storage.length);
+
+        PixelInterleavedSampleModel sampleModel =
+                new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE, fExtent.width, fExtent.height,
+                        4, fExtent.width * 4, BAND_OFFSETS_32);
+        SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE, fExtent.width, fExtent.height, 32);
+        WritableRaster raster = Raster.createWritableRaster(sm, dataBuffer,
+                new Point(0, 0));
+        MyColorModel colorModel = new MyColorModel();
+        return new BufferedImage(colorModel, raster, false, EMPTY_HASH);
     }
 
     public void open() {
@@ -132,7 +304,8 @@ public class Screen {
                         // could use synchronization, but lets rather paint too often
                         fScreenChanged = false;
                         Dimension extent = fDisplay.getSize();
-                        fDisplay.paintImmediately(0, 0, extent.width, extent.height);
+                        //fDisplay.paintImmediately(0, 0, extent.width, extent.height);
+                        fDisplay.repaint(0, 0, extent.width, extent.height);
                         // Toolkit.getDefaultToolkit().beep();      // FIXME remove
                     }
                 }
@@ -153,12 +326,12 @@ public class Screen {
     }
 
     public void redisplay(boolean immediately, final int cornerX, final int cornerY, final int width, final int height) {
-        fDisplay.repaint(cornerX, cornerY, width, height);
+        //fDisplay.repaint(cornerX, cornerY, width, height);
         fScreenChanged = true;
     }
 
     public void redisplay(boolean immediately) {
-        fDisplay.repaint();
+        //fDisplay.repaint();
         fScreenChanged = true;
     }
 
@@ -210,7 +383,7 @@ public class Screen {
         SampleModel sm = new SinglePixelPackedSampleModel(DataBuffer.TYPE_BYTE, Squeak_CURSOR_WIDTH, Squeak_CURSOR_HEIGHT, new int[]{255});
         IndexColorModel cm = new IndexColorModel(8, 3, kCursorComponentX, kCursorComponentX, kCursorComponentX, kCursorComponentA);
         WritableRaster raster = Raster.createWritableRaster(sm, buf, new Point(0, 0));
-        return new BufferedImage(cm, raster, false, null);
+        return new BufferedImage(cm, raster, true, null);
     }
 
     protected byte[] extractBits(byte bitsAndMask[], int offset) {
@@ -231,13 +404,19 @@ public class Screen {
         }
         Toolkit tk = Toolkit.getDefaultToolkit();
         Dimension cx = tk.getBestCursorSize(Squeak_CURSOR_WIDTH, Squeak_CURSOR_HEIGHT);
+
+        // using system default cursor, until we find out how to draw cursor with right size
         Cursor c;
-        if (cx.width == 0 || cx.height == 0) {
-            c = Cursor.getDefaultCursor();
-        } else {
-            Image ci = createCursorAdapter(extractBits(imageAndMask, 0), extractBits(imageAndMask, Squeak_CURSOR_HEIGHT * 4));
-            c = tk.createCustomCursor(ci, new Point(0, 0), "Smalltalk-78 cursor");
+        c = Cursor.getDefaultCursor();
+        /*if (cx.width == 0 || cx.height == 0)
+        {
+            c= Cursor.getDefaultCursor(); 
         }
+        else 
+        {
+            Image ci= createCursorAdapter(extractBits(imageAndMask, 0), extractBits(imageAndMask, Squeak_CURSOR_HEIGHT*4));
+            c= tk.createCustomCursor(ci, new Point(0, 0), "Smalltalk-78 cursor"); 
+        }*/
         fDisplay.setCursor(c);
     }
 
@@ -247,7 +426,10 @@ public class Screen {
 
     public void setExtent(Dimension extent) {
         fDisplay.setSize(extent);
-        fFrame.setSize(extent);
+        Dimension alter = new Dimension();
+        alter.height = extent.height;
+        alter.width = extent.width + 640;
+        fFrame.setSize(alter);
     }
 
     public Point getLastMousePoint() {
@@ -278,5 +460,9 @@ public class Screen {
     public int keyboardNext() {
         //System.err.println("character code="+fKeyboardQueue.peek());
         return fKeyboardQueue.next();
+    }
+
+    public void logging(String msg) {
+
     }
 }

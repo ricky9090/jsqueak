@@ -32,6 +32,9 @@ import java.util.Arrays;
  * The virtual machinery for executing Squeak bytecode.
  */
 public class SqueakVM {
+
+    public static SqueakVM INSTANCE = null;
+
     // static state:
     SqueakImage image;
     SqueakPrimitiveHandler primHandler;
@@ -176,7 +179,14 @@ public class SqueakVM {
         SqueakObject sched = schedAssn.getPointerNI(Squeak.Assn_value);
         SqueakObject proc = sched.getPointerNI(Squeak.ProcSched_activeProcess);
         activeContext = proc.getPointerNI(Squeak.Proc_suspendedContext);
-        fetchContextRegisters(activeContext);
+        if (activeContext != null) {
+            try {
+                fetchContextRegisters(activeContext);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
         reclaimableContextCount = 0;
     }
 
@@ -606,11 +616,13 @@ public class SqueakVM {
                 // Arithmetic Ops... + - < > <= >= = ~=    * / \ @ lshift: lxor: land: lor:
                 case 176:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) + stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(stackInteger(1) + stackInteger(0)))
+                        sendSpecial(b & 0xF);
                     break;   // PLUS +
                 case 177:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) - stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(stackInteger(1) - stackInteger(0)))
+                        sendSpecial(b & 0xF);
                     break;   // PLUS +
                 case 178:
                     success = true;
@@ -638,15 +650,18 @@ public class SqueakVM {
                     break;  // NEQ ~=
                 case 184:
                     success = true;
-                    if (!pop2AndPushIntResult(safeMultiply(stackInteger(1), stackInteger(0)))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(safeMultiply(stackInteger(1), stackInteger(0))))
+                        sendSpecial(b & 0xF);
                     break;  // TIMES *
                 case 185:
                     success = true;
-                    if (!pop2AndPushIntResult(quickDivide(stackInteger(1), stackInteger(0)))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(quickDivide(stackInteger(1), stackInteger(0))))
+                        sendSpecial(b & 0xF);
                     break;  // Divide /
                 case 186:
                     success = true;
-                    if (!pop2AndPushIntResult(mod(stackInteger(1), stackInteger(0)))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(mod(stackInteger(1), stackInteger(0))))
+                        sendSpecial(b & 0xF);
                     break;  // MOD \\
                 case 187:
                     success = true;
@@ -659,15 +674,18 @@ public class SqueakVM {
                     break; // bitShift:
                 case 189:
                     success = true;
-                    if (!pop2AndPushIntResult(div(stackInteger(1), stackInteger(0)))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(div(stackInteger(1), stackInteger(0))))
+                        sendSpecial(b & 0xF);
                     break;  // Divide //
                 case 190:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) & stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(stackInteger(1) & stackInteger(0)))
+                        sendSpecial(b & 0xF);
                     break; // bitAnd:
                 case 191:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) | stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pop2AndPushIntResult(stackInteger(1) | stackInteger(0)))
+                        sendSpecial(b & 0xF);
                     break; // bitOr:
 
                 // at:, at:put:, size, next, nextPut:, ...
@@ -1151,9 +1169,11 @@ public class SqueakVM {
     }
 
     public void executeNewMethod(Object newRcvr, SqueakObject newMethod, int argumentCount, int primitiveIndex) {
-        if (primitiveIndex > 0)
-            if (tryPrimitive(primitiveIndex, argumentCount))
+        if (primitiveIndex > 0) {
+            if (tryPrimitive(primitiveIndex, argumentCount)) {
                 return;  //Primitive succeeded -- end of story
+            }
+        }
         SqueakObject newContext = allocateOrRecycleContext(newMethod.methodNeedsLargeFrame());
         int methodNumLits = method.methodNumLits();
         //Our initial IP is -1, so first fetch gets bits[0]
@@ -1513,5 +1533,13 @@ public class SqueakVM {
         }
 
         screenEvent = false;
+    }
+
+    public void setSuccess(boolean suc) {
+        this.success = suc;
+    }
+
+    public boolean isSuccess() {
+        return this.success;
     }
 }

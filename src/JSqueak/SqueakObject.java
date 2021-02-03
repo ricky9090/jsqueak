@@ -38,8 +38,9 @@ import java.util.Hashtable;
  * need to replace all patterns of obj.pointers with an access function.
  * Then we would associate a finalization routine with those pointers.
  */
-public class SqueakObject //Later make variants for common formats
-{
+public class SqueakObject {
+    //Later make variants for common formats
+
     short hash;        //12-bit Squeak hash
     short format;      // 4-bit Squeak format
     Object sqClass;  //squeak class
@@ -136,8 +137,8 @@ public class SqueakObject //Later make variants for common formats
         return ((int[]) bits).length;
     }
 
-    public int instSize() //same as class.classInstSize, but faster from format
-    {
+    //same as class.classInstSize, but faster from format
+    public int instSize() {
         if (format > 4 || format == 2) //indexable fields only
             return 0;
         if (format < 2)  //indexable fields only
@@ -174,8 +175,8 @@ public class SqueakObject //Later make variants for common formats
             bits = ((int[]) other.bits).clone();
     }
 
-    double getFloatBits()  // isn't this slow?'
-    {
+    // isn't this slow?'
+    double getFloatBits() {
         return ((Double) bits).doubleValue();
     }
 
@@ -204,8 +205,8 @@ public class SqueakObject //Later make variants for common formats
             return primBits;
     }
 
-    public SqueakObject methodClassForSuper() //assn found in last literal
-    {
+    //assn found in last literal
+    public SqueakObject methodClassForSuper() {
         SqueakObject assn = getPointerNI(methodNumLits());
         return assn.getPointerNI(Squeak.Assn_value);
     }

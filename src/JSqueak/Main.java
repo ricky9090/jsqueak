@@ -40,7 +40,7 @@ public class Main {
         try {
             Starter.main(new String[0]);
         } catch (Exception ex) {
-            System.err.println(ex);
+            ex.printStackTrace();
         }
     }
 }

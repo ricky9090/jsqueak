@@ -23,7 +23,7 @@ THE SOFTWARE.
 
 package JSqueak;
 
-import java.awt.*;
+import java.awt.Rectangle;
 
 /**
  * @author Dan Ingalls
@@ -54,7 +54,7 @@ public class BitBlt {
     private int[] halftoneBits;
     private int halftoneHeight;
 
-    private boolean success;
+    //private boolean success;
     private boolean destIsDisplay;
     private int clipX, clipY, clipWidth, clipHeight;
     private boolean isWarping;
@@ -101,43 +101,50 @@ public class BitBlt {
             0x1, 0x3, 0, 0xF, 0x1F, 0, 0, 0xFF,
             0, 0, 0, 0, 0, 0, 0, 0xFFFF,
             0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0xFFFFFFFF};
+            0, 0, 0, 0, 0, 0, 0, 0xFFFFFFFF, -1};
+
+    private Object cmOop;
 
     BitBlt(SqueakVM theVM) {
         vm = theVM;
         dest = vm.newFormCache();
         source = vm.newFormCache();
+        initBBOpTable();
     }
 
     boolean loadBitBlt(SqueakObject bbObject,
                        int argCount,
                        boolean doWarp,
                        SqueakObject displayForm) {
-        success = true;
+        SqueakVM.INSTANCE.setSuccess(true);
         isWarping = doWarp;
         Object[] bbPointers = bbObject.pointers;
         combinationRule = checkIntValue(bbPointers[3]);
-        if (!success || (combinationRule < 0) || (combinationRule > (41 - 2)))
+        /*if (!success || (combinationRule < 0) || (combinationRule > (41 - 2)))
+            return false;*/
+        if (!SqueakVM.INSTANCE.isSuccess() || (combinationRule < 0) || (combinationRule > 33))
             return false;
         if (combinationRule >= 16 && combinationRule <= 17)
             return false;
         destForm = bbPointers[0];
         sourceForm = bbPointers[1];
-        noSource = ignoreSourceOrHalftone(sourceForm);
         halftoneForm = bbPointers[2];
+
+        noSource = ignoreSourceOrHalftone(sourceForm);
         noHalftone = ignoreSourceOrHalftone(halftoneForm);
+
         if (!dest.loadFrom(destForm))
             return false;
         if (!loadBBDestRect(bbPointers))
             return false;
-        if (!success)
+        if (!SqueakVM.INSTANCE.isSuccess())
             return false;
         if (noSource) {
             sourceX = sourceY = 0;
         } else {
             if (!source.loadFrom(sourceForm))
                 return false;
-            if (!loadColorMap())
+            if (!loadColorMap(bbObject))
                 return false;
             if ((cmFlags & 8) == 0)
                 setUpColorMasks();
@@ -148,7 +155,7 @@ public class BitBlt {
             return false;
         if (!loadBBClipRect(bbPointers))
             return false;
-        if (!success)
+        if (!SqueakVM.INSTANCE.isSuccess())
             return false;
         if (combinationRule == 30 || combinationRule == 31) {
             if (argCount != 1)
@@ -156,7 +163,7 @@ public class BitBlt {
             sourceAlpha = checkIntValue(vm.top());
             if (!(sourceAlpha >= 0 && sourceAlpha <= 255))
                 return false;
-            if (success)
+            if (SqueakVM.INSTANCE.isSuccess())
                 vm.pop();
         }
         // Intersect incoming clipRect with destForm bounds
@@ -193,9 +200,10 @@ public class BitBlt {
     }
 
     int checkIntValue(Object obj) {
-        if (SqueakVM.isSmallInt(obj))
+        if (SqueakVM.isSmallInt(obj)) {
             return SqueakVM.intFromSmall(((Integer) obj));
-        success = false;
+        }
+        SqueakVM.INSTANCE.setSuccess(false);
         return 0;
     }
 
@@ -207,24 +215,52 @@ public class BitBlt {
             return valueIfNil;
         SqueakObject floatObj = (SqueakObject) intOrFloatObj;
         if (floatObj.sqClass != vm.specialObjects[Squeak.splOb_ClassFloat]) {
-            success = false;
+            SqueakVM.INSTANCE.setSuccess(false);
             return 0;
         }
         floatValue = floatObj.getFloatBits();
         if (!((-2.147483648e9 <= floatValue) && (floatValue <= 2.147483647e9))) {
-            success = false;
+            SqueakVM.INSTANCE.setSuccess(false);
             return 0;
         }
         return ((int) floatValue);
     }
 
-    boolean loadBBHalftoneForm(Object aForm) // Not done yet!! 
-    {
-        if (noHalftone)
+    // Not done yet!!
+    boolean loadBBHalftoneForm(Object aForm) {
+        if (noHalftone) {
             return true;
+        }
         if (SqueakVM.isSmallInt(aForm))
             return false;
-        if (((SqueakObject) aForm).format < 6) {
+
+        // retrofit code style, refer to SqueakJS and Squeak itself
+        // FIXME by using retrofit code, when close mini-image's start window, will crash
+        SqueakObject bitsObject;
+        if (InterpreterProxy.isPointers(aForm) && InterpreterProxy.SIZEOF(aForm) >= 4) {
+            // Old-style 32xN monochrome halftone Forms
+            bitsObject = InterpreterProxy.fetchPointerOfObject(0, aForm);
+            halftoneBits = (int[]) bitsObject.bits;
+            halftoneHeight = InterpreterProxy.fetchIntegerOfObject(2, aForm);
+            if (halftoneBits == null) {
+                return false;
+            }
+            if (halftoneHeight < 1) {
+                return false;
+            }
+        } else {
+            // New spec accepts, basically, a word array
+            if (!(!InterpreterProxy.isPointers(aForm) && InterpreterProxy.isWords(aForm))) {
+                return false;
+            }
+            halftoneBits = (int[]) ((SqueakObject) aForm).bits;
+            if (halftoneBits == null || halftoneBits.length < 1) {
+                return false;
+            }
+            halftoneHeight = halftoneBits.length;
+        }
+
+        /*if (((SqueakObject) aForm).format < 6) {
             //Old-style 32xN monochrome halftone Forms
             Object[] formPointers = ((SqueakObject) aForm).pointers;
             if (formPointers == null || formPointers.length < 4)
@@ -234,7 +270,7 @@ public class BitBlt {
             halftoneBits = (int[]) ((SqueakObject) bitsObject).bits;
             if (halftoneBits == null)
                 return false;
-            if (!success || (halftoneHeight < 1))
+            if (!SqueakVM.INSTANCE.isSuccess() || (halftoneHeight < 1))
                 return false;
         } else {
             //New spec accepts, basically, a word array
@@ -244,7 +280,7 @@ public class BitBlt {
             if (halftoneBits == null || halftoneBits.length < 1)
                 return false;
             halftoneHeight = halftoneBits.length;
-        }
+        }*/
         return true;
     }
 
@@ -253,7 +289,7 @@ public class BitBlt {
         destY = checkIntOrFloatIfNil(bbPointers[5], 0);
         width = checkIntOrFloatIfNil(bbPointers[6], dest.width);
         height = checkIntOrFloatIfNil(bbPointers[7], dest.height);
-        return success;
+        return SqueakVM.INSTANCE.isSuccess();
     }
 
     boolean loadBBClipRect(Object[] bbPointers) {
@@ -261,11 +297,13 @@ public class BitBlt {
         clipY = checkIntOrFloatIfNil(bbPointers[11], 0);
         clipWidth = checkIntOrFloatIfNil(bbPointers[12], dest.width);
         clipHeight = checkIntOrFloatIfNil(bbPointers[13], dest.height);
-        return success;
+        return SqueakVM.INSTANCE.isSuccess();
     }
 
-    boolean loadColorMap() {
+    boolean loadColorMap(SqueakObject bbObject) {
         // Not yet implemented
+        int BBColorMapIndex = 14;
+        cmOop = InterpreterProxy.fetchPointerOfObject(BBColorMapIndex, bbObject);
         return true;
     }
 
@@ -439,7 +477,12 @@ public class BitBlt {
     }
 
     int srcLongAt(int index) {
-        return source.bits[index];
+        try {
+            return source.bits[index];
+        } catch (Exception e) {
+            return 0;
+        }
+
     }
 
     int dstLongAt(int index) {
@@ -663,8 +706,24 @@ public class BitBlt {
         int srcShift;
         int scrStartBits;
         source.pixPerWord = 32 / source.depth;
-        sourcePixMask = maskTable[source.depth];
-        destPixMask = maskTable[dest.depth];
+
+        // -------------------------------
+        //sourcePixMask = maskTable[source.depth];
+        //destPixMask = maskTable[dest.depth];
+
+        // refer to original Squeak 2.2 VM C implementation : interp.c
+        if (source.depth == 32) {
+            sourcePixMask = -1;
+        } else {
+            sourcePixMask = (1 << source.depth) - 1;
+        }
+        if (dest.depth == 32) {
+            destPixMask = -1;
+        } else {
+            destPixMask = (1 << dest.depth) - 1;
+        }
+        // -------------------------------
+
         mapperFlags = cmFlags & (~8);
         sourceIndex = (sy * source.pitch) + (sx / source.pixPerWord);
         scrStartBits = source.pixPerWord - (sx & (source.pixPerWord - 1));
@@ -812,7 +871,13 @@ public class BitBlt {
 
 
     int mergeFnwith(int sourceWord, int destinationWord) {
-        switch (combinationRule) {
+        IMergeFn mergeFnFunction = _BBOpTable[combinationRule + 1];
+        if (mergeFnFunction != null) {
+            return mergeFnFunction.execute(sourceWord, destinationWord);
+        } else {
+            return sourceWord;
+        }
+        /*switch (combinationRule) {
             case 0:
                 return 0;
             case 1:
@@ -872,18 +937,21 @@ public class BitBlt {
                 return partitionedANDtonBitsnPartitions(~sourceWord, destinationWord, dest.depth, dest.pixPerWord);
             default:
                 return sourceWord;
-        }
+        }*/
     }
 
-    static int partitionedANDtonBitsnPartitions(int word1, int word2, int nBits, int nParts) {
+    int partitionedANDtonBitsnPartitions(int word1, int word2, int nBits, int nParts) {
         int i;
         int result;
         int mask;
         /* partition mask starts at the right */
-        mask = maskTable[nBits];
+        // ------------------------------
+        //mask = maskTable[nBits];
+        mask = (1 << nBits) - 1;
+        // ------------------------------
         result = 0;
         for (i = 1; i <= nParts; i += 1) {
-            if ((word1 & mask) == mask) {
+            if (((~word1) & mask) == mask) {
                 result = result | (word2 & mask);
             }
             /* slide left to next partition */
@@ -891,4 +959,320 @@ public class BitBlt {
         }
         return result;
     }
+
+    int partitionedAddtonBitsnPartitions(int word1, int word2, int nBits, int nParts) {
+        int i;
+        int result;
+        int mask;
+        int sum;
+
+        mask = (1 << nBits) - 1;
+
+        result = 0;
+        for (i = 1; i <= nParts; i += 1) {
+            sum = (word1 & mask) + (word2 & mask);
+            if (sum <= mask) {
+                result = result | sum;
+            } else {
+                result = result | mask;
+            }
+            mask = mask << nBits;
+        }
+        return result;
+    }
+
+    int partitionedSubfromnBitsnPartitions(int word1, int word2, int nBits, int nParts) {
+        int mask;
+        int i;
+        int p1;
+        int p2;
+        int result;
+
+        mask = (1 << nBits) - 1;
+        result = 0;
+        for (i = 1; i <= nParts; i += 1) {
+            p1 = word1 & mask;
+            p2 = word2 & mask;
+            if (p1 < p2) {
+                result = result | (p2 - p1);
+            } else {
+                result = result | (p1 - p2);
+            }
+            mask = mask << nBits;
+        }
+        return result;
+    }
+
+    interface IMergeFn {
+        int execute(int sourceWord, int destinationWord);
+    }
+
+    private IMergeFn[] _BBOpTable = new IMergeFn[50];
+
+
+    /*
+    opTable[0+1] = (int)clearWordwith;
+    opTable[1+1] = (int)bitAndwith;
+    opTable[2+1] = (int)bitAndInvertwith;
+    opTable[3+1] = (int)sourceWordwith;
+    opTable[4+1] = (int)bitInvertAndwith;
+    opTable[5+1] = (int)destinationWordwith;
+    opTable[6+1] = (int)bitXorwith;
+    opTable[7+1] = (int)bitOrwith;
+    opTable[8+1] = (int)bitInvertAndInvertwith;
+    opTable[9+1] = (int)bitInvertXorwith;
+    opTable[10+1] = (int)bitInvertDestinationwith;
+    opTable[11+1] = (int)bitOrInvertwith;
+    opTable[12+1] = (int)bitInvertSourcewith;
+    opTable[13+1] = (int)bitInvertOrwith;
+    opTable[14+1] = (int)bitInvertOrInvertwith;
+    opTable[15+1] = (int)destinationWordwith;
+    opTable[16+1] = (int)destinationWordwith;
+    opTable[17+1] = (int)destinationWordwith;
+    opTable[18+1] = (int)addWordwith;
+    opTable[19+1] = (int)subWordwith;
+    opTable[20+1] = (int)rgbAddwith;
+    opTable[21+1] = (int)rgbSubwith;
+    opTable[22+1] = (int)OLDrgbDiffwith;
+    opTable[23+1] = (int)OLDtallyIntoMapwith;
+    opTable[24+1] = (int)alphaBlendwith;
+    opTable[25+1] = (int)pixPaintwith;
+    opTable[26+1] = (int)pixMaskwith;
+    opTable[27+1] = (int)rgbMaxwith;
+    opTable[28+1] = (int)rgbMinwith;
+    opTable[29+1] = (int)rgbMinInvertwith;
+    opTable[30+1] = (int)alphaBlendConstwith;
+    opTable[31+1] = (int)alphaPaintConstwith;
+    opTable[32+1] = (int)rgbDiffwith;
+    opTable[33+1] = (int)tallyIntoMapwith;
+     */
+
+    /**
+     * Original BBOptable in interp.c
+     * TODO complete all function of BBOpTable
+     */
+    private void initBBOpTable() {
+        // SqueakFunction:: clearWordwith
+        _BBOpTable[0 + 1] = (sourceWord, destinationWord) -> {
+            return 0;
+        };
+
+        // SqueakFunction:: bitAndwith
+        _BBOpTable[1 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord & destinationWord;
+        };
+
+        // SqueakFunction:: bitAndInvertwith
+        _BBOpTable[2 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord & (~destinationWord);
+        };
+
+        // SqueakFunction:: sourceWordwith
+        _BBOpTable[3 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: bitInvertAndwith
+        _BBOpTable[4 + 1] = (sourceWord, destinationWord) -> {
+            return (~sourceWord) & destinationWord;
+        };
+
+        // SqueakFunction:: destinationWordwith
+        _BBOpTable[5 + 1] = (sourceWord, destinationWord) -> {
+            return destinationWord;
+        };
+
+        // SqueakFunction:: bitXorwith
+        _BBOpTable[6 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord ^ destinationWord;
+        };
+
+        // SqueakFunction:: bitOrwith
+        _BBOpTable[7 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord | destinationWord;
+        };
+
+        // SqueakFunction:: bitInvertAndInvertwith
+        _BBOpTable[8 + 1] = (sourceWord, destinationWord) -> {
+            return (~sourceWord) & (~destinationWord);
+        };
+
+        // SqueakFunction:: bitInvertXorwith
+        _BBOpTable[9 + 1] = (sourceWord, destinationWord) -> {
+            return (~sourceWord) ^ destinationWord;
+        };
+
+        // SqueakFunction:: bitInvertDestinationwith
+        _BBOpTable[10 + 1] = (sourceWord, destinationWord) -> {
+            return ~destinationWord;
+        };
+
+        // SqueakFunction:: bitOrInvertwith
+        _BBOpTable[11 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord | (~destinationWord);
+        };
+
+        // SqueakFunction:: bitInvertSourcewith
+        _BBOpTable[12 + 1] = (sourceWord, destinationWord) -> {
+            return ~sourceWord;
+        };
+
+        // SqueakFunction:: bitInvertOrwith
+        _BBOpTable[13 + 1] = (sourceWord, destinationWord) -> {
+            return (~sourceWord) | destinationWord;
+        };
+
+        // SqueakFunction:: bitInvertOrInvertwith
+        _BBOpTable[14 + 1] = (sourceWord, destinationWord) -> {
+            return (~sourceWord) | (~destinationWord);
+        };
+
+        // SqueakFunction:: destinationWordwith
+        _BBOpTable[15 + 1] = (sourceWord, destinationWord) -> {
+            return destinationWord;
+        };
+
+        // SqueakFunction:: destinationWordwith
+        _BBOpTable[16 + 1] = (sourceWord, destinationWord) -> {
+            return destinationWord;
+        };
+
+        // SqueakFunction:: destinationWordwith
+        _BBOpTable[17 + 1] = (sourceWord, destinationWord) -> {
+            return destinationWord;
+        };
+
+        // SqueakFunction:: addWordwith
+        _BBOpTable[18 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord + destinationWord;
+        };
+
+        // SqueakFunction:: subWordwith
+        _BBOpTable[19 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord - destinationWord;
+        };
+
+        // SqueakFunction:: rgbAddwith
+        _BBOpTable[20 + 1] = (sourceWord, destinationWord) -> {
+            if (dest.depth < 16) {
+                return partitionedAddtonBitsnPartitions(sourceWord, destinationWord, dest.depth, dest.pixPerWord);
+            }
+            if (dest.depth == 16) {
+                return (partitionedAddtonBitsnPartitions(sourceWord, destinationWord, 5, 3)) + ((partitionedAddtonBitsnPartitions(sourceWord >> 16, destinationWord >> 16, 5, 3)) << 16);
+            } else {
+                return partitionedAddtonBitsnPartitions(sourceWord, destinationWord, 8, 3);
+            }
+        };
+
+        // SqueakFunction:: rgbSubwith
+        _BBOpTable[21 + 1] = (sourceWord, destinationWord) -> {
+            if (dest.depth < 16) {
+                return partitionedSubfromnBitsnPartitions(sourceWord, destinationWord, dest.depth, dest.pixPerWord);
+            }
+            if (dest.depth == 16) {
+                return (partitionedSubfromnBitsnPartitions(sourceWord, destinationWord, 5, 3)) + ((partitionedSubfromnBitsnPartitions((sourceWord) >> 16, (destinationWord) >> 16, 5, 3)) << 16);
+            } else {
+                return partitionedSubfromnBitsnPartitions(sourceWord, destinationWord, 8, 3);
+            }
+        };
+
+        // SqueakFunction:: OLDrgbDiffwith
+        _BBOpTable[22 + 1] = (sourceWord, destinationWord) -> {
+            int diff;
+            int pixMask;
+            int destPixSize = dest.depth;
+
+            if (destPixSize < 16) {
+                diff = sourceWord ^ destinationWord;
+                pixMask = (((destPixSize < 0) ? (1 >> -destPixSize) : (1 << destPixSize))) - 1;
+                while (!(diff == 0)) {
+                    if ((diff & pixMask) != 0) {
+                        bitCount += 1;
+                    }
+                    diff = (diff) >> destPixSize;
+                }
+                return destinationWord;
+            }
+            if (destPixSize == 16) {
+                diff = partitionedSubfromnBitsnPartitions(sourceWord, destinationWord, 5, 3);
+                bitCount = ((bitCount + (diff & 31)) + (((diff) >> 5) & 31)) + (((diff) >> 10) & 31);
+                diff = partitionedSubfromnBitsnPartitions((sourceWord) >> 16, (destinationWord) >> 16, 5, 3);
+                bitCount = ((bitCount + (diff & 31)) + (((diff) >> 5) & 31)) + (((diff) >> 10) & 31);
+            } else {
+                diff = partitionedSubfromnBitsnPartitions(sourceWord, destinationWord, 8, 3);
+                bitCount = ((bitCount + (diff & 255)) + (((diff) >> 8) & 255)) + (((diff) >> 16) & 255);
+            }
+            return destinationWord;
+        };
+
+        // SqueakFunction:: OLDtallyIntoMapwith
+        // TODO
+        _BBOpTable[23 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: alphaBlendwith
+        // TODO
+        _BBOpTable[24 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: pixPaintwith
+        _BBOpTable[25 + 1] = (sourceWord, destinationWord) -> {
+            if (sourceWord == 0) {
+                return destinationWord;
+            }
+            return sourceWord | (partitionedANDtonBitsnPartitions(~sourceWord, destinationWord, dest.depth, dest.pixPerWord));
+        };
+
+        // SqueakFunction:: pixMaskwith
+        _BBOpTable[26 + 1] = (sourceWord, destinationWord) -> {
+            return partitionedANDtonBitsnPartitions(~sourceWord, destinationWord, dest.depth, dest.pixPerWord);
+        };
+
+        // SqueakFunction:: rgbMaxwith
+        // TODO
+        _BBOpTable[27 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: rgbMinwith
+        // TODO
+        _BBOpTable[28 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: rgbMinInvertwith
+        // TODO
+        _BBOpTable[29 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: alphaBlendConstwith
+        // TODO
+        _BBOpTable[30 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: alphaPaintConstwith
+        // TODO
+        _BBOpTable[31 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: rgbDiffwith
+        // TODO
+        _BBOpTable[32 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+        // SqueakFunction:: tallyIntoMapwith
+        // TODO
+        _BBOpTable[33 + 1] = (sourceWord, destinationWord) -> {
+            return sourceWord;
+        };
+
+    }
+
+
 }

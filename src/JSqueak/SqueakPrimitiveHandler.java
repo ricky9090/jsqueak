@@ -32,6 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static java.lang.System.exit;
+
 /**
  * @author Daniel Ingalls
  * <p>
@@ -50,6 +52,8 @@ class SqueakPrimitiveHandler {
     private int[] displayBitmap;
     private int displayRaster;
     private byte[] displayBitmapInBytes;
+    private int[] displayBitmapInInts;
+    private int[] displayBitmapFromOrg;
     private int BWMask = 0;
 
 
@@ -178,6 +182,7 @@ class SqueakPrimitiveHandler {
             }
             return true;
         } catch (PrimitiveFailedException exception) {
+            //exception.printStackTrace();
             return false;
         }
     }
@@ -432,7 +437,7 @@ class SqueakPrimitiveHandler {
                     popNandPush(1, SqueakVM.smallFromInt(image.spaceLeft())); // bytesLeft
                     break;
                 case 113:
-                    System.exit(0);
+                    exit(0);
                 case 116:
                     return vm.flushMethodCacheForMethod((SqueakObject) vm.top());
                 case 119:
@@ -533,11 +538,15 @@ class SqueakPrimitiveHandler {
                 case 230:
                     primitiveYield(argCount); //yield for 10ms
                     break;
+                case 233:
+                    primitiveSetFullScreen();
+                    break;
                 default:
                     return false;
             }
             return true;
         } catch (PrimitiveFailedException exception) {
+            //SqueakLogger.log("PrimitiveFailedException happened when primitiveCode: " + index);
             return false;
         }
     }
@@ -1313,9 +1322,16 @@ class SqueakPrimitiveHandler {
     }
 
     private void beDisplay(SqueakObject displayObj) {
+        SqueakLogger.log("displayObj: " + displayObj.toString());
         SqueakVM.FormCache disp = vm.newFormCache(displayObj);
-        if (disp.squeakForm == null)
+        if (disp.squeakForm == null) {
             throw PrimitiveFailed;
+        }
+        SqueakLogger.log("    disp depth: " + disp.depth);
+        SqueakLogger.log("    disp pixPerWord: " + disp.pixPerWord);
+        SqueakLogger.log("    disp pitch: " + disp.pitch);
+        SqueakLogger.log("    disp bits length: " + disp.bits.length);
+
         vm.specialObjects[Squeak.splOb_TheDisplay] = displayObj;
         displayBitmap = disp.bits;
         boolean remap = theDisplay != null;
@@ -1331,15 +1347,26 @@ class SqueakPrimitiveHandler {
                                                         public void windowClosing(WindowEvent evt) {
                                                             // TODO ask before shutdown
                                                             // FIXME at least lock out quitting until concurrent image save has finished
-                                                            //exit(1);
+                                                            exit(1);
                                                         }
                                                     }
             );
         }
         displayBitmapInBytes = new byte[displayBitmap.length * 4];
-        copyBitmapToByteArray(displayBitmap, displayBitmapInBytes,
+        //displayBitmapInBytes = new byte[1_228_800]; // fix size for 32bit color model
+        displayBitmapInInts = new int[307_200]; // fix size for 32bit color model
+        displayBitmapFromOrg = new int[displayBitmap.length];
+
+        /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes,
+                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
+        /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts,
+                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
+        copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg,
                 new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);
-        theDisplay.setBits(displayBitmapInBytes, disp.depth);
+
+        //theDisplay.setBits(displayBitmapInBytes, disp.depth);
+        //theDisplay.setBitsAlter(displayBitmapInInts, disp.depth);
+        theDisplay.setBitsV2(displayBitmapFromOrg, disp.depth);
         if (!remap)
             theDisplay.open();
     }
@@ -1401,12 +1428,17 @@ class SqueakPrimitiveHandler {
 
     private void primitiveCopyBits(SqueakObject rcvr, int argCount) {
         // no rcvr class check, to allow unknown subclasses (e.g. under Turtle)
-        if (!bitbltTable.loadBitBlt(rcvr, argCount, false, (SqueakObject) vm.specialObjects[Squeak.splOb_TheDisplay]))
+        if (!bitbltTable.loadBitBlt(rcvr, argCount, false, (SqueakObject) vm.specialObjects[Squeak.splOb_TheDisplay])) {
             throw PrimitiveFailed;
+        }
 
         Rectangle affectedArea = bitbltTable.copyBits();
         if (affectedArea != null && theDisplay != null) {
-            copyBitmapToByteArray(displayBitmap, displayBitmapInBytes, affectedArea,
+            /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes, affectedArea,
+                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
+            /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts, affectedArea,
+                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
+            copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg, affectedArea,
                     bitbltTable.dest.pitch, bitbltTable.dest.depth);
             theDisplay.redisplay(false, affectedArea);
         }
@@ -1414,26 +1446,128 @@ class SqueakPrimitiveHandler {
             vm.popNandPush(2, SqueakVM.smallFromInt(bitbltTable.bitCount));
     }
 
+    // FIXME (copyBitmapToByteArray)
     private void copyBitmapToByteArray(int[] words, byte[] bytes, Rectangle rect, int raster, int depth) {
         //Copy our 32-bit words into a byte array  until we find out
         // how to make AWT happy with int buffers
+        if (depth == 1) {
+            //System.out.println("copyBitmapToByteArray 1bit mode");
+            copyBitmapMode1BitToByte(words, bytes, rect, raster, depth);
+        } else if (depth == 8) {
+            //System.out.println("copyBitmapToByteArray 8bit mode");
+            copyBitmapMode8BitToByte(words, bytes, rect, raster, depth);
+        }
+    }
+
+    /**
+     *  32 pixel/integer => 8 pixel/byte
+     */
+    private void copyBitmapMode1BitToByte(int[] words, byte[] bitmapData, Rectangle rect, int raster, int depth) {
         int word;
-        int ix1 = rect.x / depth / 32;
-        int ix2 = (rect.x + rect.width - 1) / depth / 32 + 1;
-        for (int y = rect.y; y < rect.y + rect.height; y++) {
-            int iy = y * raster;
-            for (int ix = ix1; ix < ix2; ix++) {
-                word = (words[iy + ix]) ^ BWMask;
-                for (int j = 0; j < 4; j++)
-                    bytes[((iy + ix) * 4) + j] = (byte) ((word >>> ((3 - j) * 8)) & 255);
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]); // actual 32 pixel
+            for (int j = 0; j < 4; j++) {
+                int pixelIndex = i * 4 + j;
+                // 8 pixel per byte
+                bitmapData[pixelIndex] = (byte) ((word >>> ((3 - j) * 8)) & 255);
             }
         }
+    }
 
-        //        int word;
-        //        for(int i=0; i<words.length; i++) {
-        //            word= ~(words[i]);
-        //            for(int j=0; j<4; j++)
-        //                bytes[(i*4)+j]= (byte)((word>>>((3-j)*8))&255); }
+    /**
+     *  4 pixel/integer => 1 pixel/byte
+     */
+    private void copyBitmapMode8BitToByte(int[] words, byte[] bitmapData, Rectangle rect, int raster, int depth) {
+        int word;
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]); // actual 4 pixel
+            for (int j = 0; j < 4; j++) {
+                int pixelIndex = i * 4 + j;
+                // 1 pixel per byte
+                bitmapData[pixelIndex] = (byte) ((word >>> ((3 - j) * 8)) & 255);
+            }
+        }
+    }
+
+    /**
+     * for testing ColorMode in 32bit depth<br>
+     * very slow, should be Deprecated
+     */
+    @Deprecated
+    private void copyBitmapToIntArray(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
+        if (depth == 1) {
+            //System.out.println("copyBitmapToIntArray 1bit mode");
+            copyBitmapMode1BitTo1Int(words, bitmapData, rect, raster, depth);
+        } else if (depth == 8) {
+            //System.out.println("copyBitmapToIntArray 8bit mode");
+            copyBitmapMode8BitTo1Int(words, bitmapData, rect, raster, depth);
+        }
+    }
+
+    /**
+     *  32 pixel/integer  (span)=> 1 pixel/integer
+     */
+    private void copyBitmapMode1BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
+        int wordsLen = words.length;  //should be 9600(word) aka 307200(1bit-pixel)
+        int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
+        // FIXME skip for #beCursor because we use system default cursor
+        if (words.length != 9600) {
+            return;
+        }
+
+        // map 1bit => 32bit
+        int word;
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]);  // actual 32 pixel
+            for (int j = 0; j < 32; j++) {
+                int pixel = (word >> (31 - j)) & 0x01;  // get 1 bit
+                int pixelIndex = 32 * i + j;
+                int bit = pixel == 1 ? 0x00 : 0xFF;
+                // convert pixel to ARGB 32bit format
+                int pixel32bit = (0xFF << 24) | (bit << 16) | (bit << 8) | bit;
+                bitmapData[pixelIndex] = pixel32bit;
+            }
+        }
+    }
+
+    /**
+     *  4 pixel/integer  (span)=> 1 pixel/integer
+     */
+    private void copyBitmapMode8BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
+        int wordsLen = words.length;  //should be 76,800(word) aka 307,200(8bit-pixel)
+        int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
+        // FIXME skip for #beCursor because we use system default cursor
+        if (words.length != 76800) {
+            return;
+        }
+
+        // map 8bit => 32bit
+        int word;
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]);  // actual 4 pixel
+            //System.out.println("word : " + Integer.toHexString(word));
+            for (int j = 0; j < 4; j++) {
+                int pixel = (word >> (32 - 8 * (3-j))) & 0xFF;  // get 8 bit
+
+                int pixelIndex = 4 * i + j;
+                int alpha = 0x88;
+                int red = ((pixel >> 5) & 0x07) * 32;
+                int green = ((pixel >> 2) & 0x07) * 32;
+                int blue = ((pixel) & 0x03) * 64;
+                // convert pixel to ARGB 32bit format
+                int pixel32bit = (alpha << 24) | (red << 16) | (green << 8) | blue;
+                bitmapData[pixelIndex] = pixel32bit;
+            }
+        }
+    }
+
+    /**
+     * direct copy bitblt bitmap to int buffer
+     */
+    private void copyBitmapIntToInt(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
+        for (int i = 0; i < words.length; i++) {
+            bitmapData[i] = words[i];
+        }
     }
 
     private SqueakObject primitiveMousePoint() {
@@ -1490,6 +1624,26 @@ class SqueakPrimitiveHandler {
         SqueakObject sqClass = (SqueakObject) priorInstance.sqClass;
         return image.nextInstance(image.otIndexOfObject(priorInstance) + 1, sqClass);
     }
+
+    //  region more-primitive-for-squeak
+
+    private void primitiveSetFullScreen() {
+        Object argOop = vm.top();
+
+        if (argOop == null) {
+            primitiveFailed();
+        }
+
+        if (argOop == vm.trueObj) {
+            System.out.println("invoke :: primitiveSetFullScreen on");
+        } else {
+            System.out.println("invoke :: primitiveSetFullScreen off");
+        }
+
+        vm.pop();
+    }
+
+    // endregion more-primitive-for-squeak
 
     private boolean relinquishProcessor() {
         int periodInMicroseconds = stackInteger(0); //NOTE: argument is *ignored*

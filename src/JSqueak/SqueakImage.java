@@ -187,8 +187,8 @@ public class SqueakImage {
         return -1;  //should not happen
     }
 
-    private final static int OTMinSize = 30000;
-    private final static int OTMaxSize = 60000;
+    private final static int OTMinSize = 120000;
+    private final static int OTMaxSize = 640000;
     private final static int OTGrowSize = 10000;
 
     public short registerObject(SqueakObject obj) {
@@ -356,10 +356,11 @@ public class SqueakImage {
 
     private int intFromInputSwapped(DataInput in, boolean doSwap) throws IOException {
         // Return an int from stream 'in', swizzled if doSwap is true
+        int tmp = in.readInt();
         if (doSwap)
-            return swapInt(in.readInt());
+            return swapInt(tmp);
         else
-            return in.readInt();
+            return tmp;
     }
 
     private int swapInt(int toSwap) {
