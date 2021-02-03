@@ -53,6 +53,7 @@ class SqueakPrimitiveHandler {
     private int displayRaster;
     private byte[] displayBitmapInBytes;
     private int[] displayBitmapInInts;
+    private int[] displayBitmapFromOrg;
     private int BWMask = 0;
 
 
@@ -1351,15 +1352,21 @@ class SqueakPrimitiveHandler {
                                                     }
             );
         }
-        //displayBitmapInBytes = new byte[displayBitmap.length * 4];
-        displayBitmapInBytes = new byte[1_228_800]; // fix size for 32bit color model
+        displayBitmapInBytes = new byte[displayBitmap.length * 4];
+        //displayBitmapInBytes = new byte[1_228_800]; // fix size for 32bit color model
         displayBitmapInInts = new int[307_200]; // fix size for 32bit color model
-        copyBitmapToByteArray(displayBitmap, displayBitmapInBytes,
-                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);
-        copyBitmapToIntArray(displayBitmap, displayBitmapInInts,
+        displayBitmapFromOrg = new int[displayBitmap.length];
+
+        /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes,
+                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
+        /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts,
+                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
+        copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg,
                 new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);
 
-        theDisplay.setBitsAlter(displayBitmapInInts, disp.depth);
+        //theDisplay.setBits(displayBitmapInBytes, disp.depth);
+        //theDisplay.setBitsAlter(displayBitmapInInts, disp.depth);
+        theDisplay.setBitsV2(displayBitmapFromOrg, disp.depth);
         if (!remap)
             theDisplay.open();
     }
@@ -1427,9 +1434,11 @@ class SqueakPrimitiveHandler {
 
         Rectangle affectedArea = bitbltTable.copyBits();
         if (affectedArea != null && theDisplay != null) {
-            copyBitmapToByteArray(displayBitmap, displayBitmapInBytes, affectedArea,
-                    bitbltTable.dest.pitch, bitbltTable.dest.depth);
-            copyBitmapToIntArray(displayBitmap, displayBitmapInInts, affectedArea,
+            /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes, affectedArea,
+                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
+            /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts, affectedArea,
+                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
+            copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg, affectedArea,
                     bitbltTable.dest.pitch, bitbltTable.dest.depth);
             theDisplay.redisplay(false, affectedArea);
         }
@@ -1441,62 +1450,50 @@ class SqueakPrimitiveHandler {
     private void copyBitmapToByteArray(int[] words, byte[] bytes, Rectangle rect, int raster, int depth) {
         //Copy our 32-bit words into a byte array  until we find out
         // how to make AWT happy with int buffers
-        /*String log = "copyBitmapToByteArray words.length = " + words.length + " bytes.length = " + bytes.length + " x: " + rect.x
-                + " y: " + rect.y + " width: " + rect.width + " height: " + rect.height + " raster: " + raster + " depth: " + depth;
-        SqueakLogger.log(log);
         if (depth == 1) {
-            copyBitmapMode1Bit(words, bytes, rect, raster, depth);
-        }*/
-        /*int word;
-        int ix1 = rect.x / depth / 32;
-        int ix2 = (rect.x + rect.width - 1) / depth / 32 + 1;
-        for (int y = rect.y; y < rect.y + rect.height; y++) {
-            int iy = y * raster;
-            for (int ix = ix1; ix < ix2; ix++) {
-                word = (words[iy + ix]) ^ BWMask;
-                for (int j = 0; j < 4; j++)
-                    bytes[((iy + ix) * 4) + j] = (byte) ((word >>> ((3 - j) * 8)) & 255);
-            }
-        }*/
-
-        /*int word;
-        int ix1 = rect.x / depth / 32;
-        int ix2 = (rect.x + rect.width - 1) / depth / 32 + 1;
-        int deltaX = 0;
-        int deltaY = 0;
-        for (int y = rect.y; y < rect.y + rect.height; y++) {
-            int iy = y * raster;
-            for (int ix = ix1; ix < ix2; ix++) {
-                word = (words[iy + ix]) ^ BWMask;
-                for (int j = 0; j < 4; j++)
-                    bytes[((iy + ix) * 4) + j] = (byte) ((word >>> ((3 - j) * 8)) & 255);
-            }
-        }*/
-
-        /*int word;
-        for (int i = 0; i < words.length; i++) {
-            word = (words[i]);
-            for (int j = 0; j < 4; j++)
-                bytes[(i * 4) + j] = (byte) ((word >>> ((3 - j) * 8)) & 255);
-        }*/
-
-
-        // _______________________________________
-        /*int word;
-        for (int i = 0; i < words.length; i++) {
-            word = (words[i]);
-            for (int j = 0; j < 4; j++) {
-                bytes[(i * 4) + j] = (byte) ((word >>> ((3 - j) * 8)) & 255);
-            }
-        }*/
-
-        /*StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; i++) {
-            sb.append(bytes[i]);
+            //System.out.println("copyBitmapToByteArray 1bit mode");
+            copyBitmapMode1BitToByte(words, bytes, rect, raster, depth);
+        } else if (depth == 8) {
+            //System.out.println("copyBitmapToByteArray 8bit mode");
+            copyBitmapMode8BitToByte(words, bytes, rect, raster, depth);
         }
-        System.out.println("byte[]: " + sb.toString());*/
     }
 
+    /**
+     *  32 pixel/integer => 8 pixel/byte
+     */
+    private void copyBitmapMode1BitToByte(int[] words, byte[] bitmapData, Rectangle rect, int raster, int depth) {
+        int word;
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]); // actual 32 pixel
+            for (int j = 0; j < 4; j++) {
+                int pixelIndex = i * 4 + j;
+                // 8 pixel per byte
+                bitmapData[pixelIndex] = (byte) ((word >>> ((3 - j) * 8)) & 255);
+            }
+        }
+    }
+
+    /**
+     *  4 pixel/integer => 1 pixel/byte
+     */
+    private void copyBitmapMode8BitToByte(int[] words, byte[] bitmapData, Rectangle rect, int raster, int depth) {
+        int word;
+        for (int i = 0; i < words.length; i++) {
+            word = (words[i]); // actual 4 pixel
+            for (int j = 0; j < 4; j++) {
+                int pixelIndex = i * 4 + j;
+                // 1 pixel per byte
+                bitmapData[pixelIndex] = (byte) ((word >>> ((3 - j) * 8)) & 255);
+            }
+        }
+    }
+
+    /**
+     * for testing ColorMode in 32bit depth<br>
+     * very slow, should be Deprecated
+     */
+    @Deprecated
     private void copyBitmapToIntArray(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
         if (depth == 1) {
             //System.out.println("copyBitmapToIntArray 1bit mode");
@@ -1507,6 +1504,9 @@ class SqueakPrimitiveHandler {
         }
     }
 
+    /**
+     *  32 pixel/integer  (span)=> 1 pixel/integer
+     */
     private void copyBitmapMode1BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
         int wordsLen = words.length;  //should be 9600(word) aka 307200(1bit-pixel)
         int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
@@ -1530,6 +1530,9 @@ class SqueakPrimitiveHandler {
         }
     }
 
+    /**
+     *  4 pixel/integer  (span)=> 1 pixel/integer
+     */
     private void copyBitmapMode8BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
         int wordsLen = words.length;  //should be 76,800(word) aka 307,200(8bit-pixel)
         int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
@@ -1555,6 +1558,15 @@ class SqueakPrimitiveHandler {
                 int pixel32bit = (alpha << 24) | (red << 16) | (green << 8) | blue;
                 bitmapData[pixelIndex] = pixel32bit;
             }
+        }
+    }
+
+    /**
+     * direct copy bitblt bitmap to int buffer
+     */
+    private void copyBitmapIntToInt(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
+        for (int i = 0; i < words.length; i++) {
+            bitmapData[i] = words[i];
         }
     }
 

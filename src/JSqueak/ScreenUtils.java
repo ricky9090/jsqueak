@@ -7,6 +7,7 @@ import java.awt.image.IndexColorModel;
 
 public class ScreenUtils {
 
+    // cf. http://doc.novsu.ac.ru/oreilly/java/awt/ch12_02.htm
     private final static byte kComponents[] =
             new byte[]{(byte) 255, 0, (byte) 240, (byte) 230,
                     (byte) 220, (byte) 210, (byte) 200, (byte) 190, (byte) 180, (byte) 170,
@@ -76,7 +77,7 @@ public class ScreenUtils {
                 DataBuffer.TYPE_BYTE);
     }
 
-    public static ColorModel getColorfulModelV4() {
+    public static ColorModel get256ColorModel() {
         byte[] r = new byte[256];
         byte[] g = new byte[256];
         byte[] b = new byte[256];
@@ -91,13 +92,5 @@ public class ScreenUtils {
             b[i] = (byte) blue[i & 0x03];
         }
         return new IndexColorModel(8, 256, r, g, b, 255);
-    }
-
-    public static ColorModel autoLoadColorModel() {
-        if (BuildConfig.getImageName().equals(BuildConfig.MINI_IMAGE)) {
-            return getBlackWhiteModel();
-        } else {
-            return getColorfulModel();
-        }
     }
 }

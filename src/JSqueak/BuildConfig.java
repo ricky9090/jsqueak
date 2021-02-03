@@ -19,12 +19,12 @@ public class BuildConfig {
     /**
      * The file name of the mini image.
      */
-    public static final String MINI_IMAGE = "mini.image.gz";
-    public static final String SQUEAK_IMAGE_V22 = "squeak22.image.gz";
+    public static final String MINI_IMAGE = "mini.image.gz";  // original image in JSqueak
+    public static final String SQUEAK_IMAGE_V22 = "squeak22.image.gz";  // original image of full version Squeak 2.2
 
     public static String getImageName() {
-        return SQUEAK_IMAGE_V22;
+        return MINI_IMAGE;
     }
 
-    public static final int DISPLAY_POLICY = 5;
+    public static final int DISPLAY_POLICY = 1;
 }

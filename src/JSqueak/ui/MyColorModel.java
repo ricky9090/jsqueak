@@ -1,4 +1,4 @@
-package JSqueak.image;
+package JSqueak.ui;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
@@ -6,20 +6,14 @@ import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 
-public class MyColorModelInt extends ColorModel {
+public class MyColorModel extends ColorModel {
 
     private static final int[] BITS = { 8, 8, 8, 8,};
 
-    public MyColorModelInt() {
+    public MyColorModel() {
         super(32, BITS, ColorSpace.getInstance(ColorSpace.CS_sRGB),
                 true, false, Transparency.TRANSLUCENT,
-                DataBuffer.TYPE_INT);
-    }
-
-    public MyColorModelInt(int translucent) {
-        super(32, BITS, ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                false, false, translucent,
-                DataBuffer.TYPE_INT);
+                DataBuffer.TYPE_BYTE);
     }
 
     @Override
@@ -28,8 +22,13 @@ public class MyColorModelInt extends ColorModel {
     }
 
     private int getPixel(Object inData) {
-        int[] data = (int[]) inData;
-        return data[0];
+        byte[] data = (byte[]) inData;
+        int value = data[0] & 0x00FF;
+        value |= (data[1] & 0x00FF) << 8;
+        value |= (data[2] & 0x00FF) << 16;
+        value |= (data[3] & 0x00FF) << 24;
+
+        return value;
     }
 
     @Override
