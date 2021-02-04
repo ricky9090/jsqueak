@@ -1,4 +1,4 @@
-package JSqueak;
+package org.jsqueak;
 
 import java.io.File;
 import java.io.FileNotFoundException;

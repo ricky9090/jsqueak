@@ -1,4 +1,4 @@
-package JSqueak;
+package org.jsqueak;
 
 import javax.swing.event.MouseInputAdapter;
 import java.awt.event.MouseEvent;

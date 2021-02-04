@@ -29,10 +29,11 @@ THE SOFTWARE.
  continued to help whenever I was particularly stuck during the project.
 */
 
-package JSqueak;
+package org.jsqueak;
 
-import JSqueak.ui.MyColorModel;
-import JSqueak.ui.MyColorModelInt;
+
+import org.jsqueak.display.MyColorModel;
+import org.jsqueak.display.MyColorModelInt;
 
 import javax.swing.*;
 import java.awt.*;
@@ -194,7 +195,7 @@ public class Screen {
     }
 
     private Image getImagePolicy(byte storage[]) {
-        switch(BuildConfig.DISPLAY_POLICY) {
+        switch(SqueakConfig.DISPLAY_POLICY) {
             case 1:
                 return getImageV1(storage);
             case 4:

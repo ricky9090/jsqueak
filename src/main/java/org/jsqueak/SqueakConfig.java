@@ -1,11 +1,11 @@
-package JSqueak;
+package org.jsqueak;
 
 import java.awt.image.ColorModel;
 
 /**
  * Global config for JSqueak
  */
-public class BuildConfig {
+public class SqueakConfig {
 
     public static final boolean DEBUG_LOGGING = true;
 
@@ -23,7 +23,7 @@ public class BuildConfig {
     public static final String SQUEAK_IMAGE_V22 = "squeak22.image.gz";  // original image of full version Squeak 2.2
 
     public static String getImageName() {
-        return MINI_IMAGE;
+        return "/image/" + SQUEAK_IMAGE_V22;
     }
 
     public static final int DISPLAY_POLICY = 1;

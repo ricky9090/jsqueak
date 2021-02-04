@@ -1,4 +1,4 @@
-package JSqueak;
+package org.jsqueak;
 
 import java.awt.*;
 import java.awt.image.ColorModel;

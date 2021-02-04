@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package JSqueak;
+package org.jsqueak;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,18 +35,15 @@ public class Starter {
      * Locate a startable image as a resource.
      */
     private static SqueakImage locateStartableImage() throws IOException {
-        //File saved= new File( pathname );
-        //if (saved.exists()) return new SqueakImage(saved);
-        // and only if no image name was given
-        URL imageUrl = Starter.class.getResource(BuildConfig.getImageName());
+        URL imageUrl = Starter.class.getResource(SqueakConfig.getImageName());
         if ("file".equals(imageUrl.getProtocol()))
             return new SqueakImage(new File(imageUrl.getPath()));
 
-        InputStream ims = Starter.class.getResourceAsStream(BuildConfig.getImageName());
+        InputStream ims = Starter.class.getResourceAsStream(SqueakConfig.getImageName());
         if (ims != null)
             return new SqueakImage(ims);
 
-        throw new FileNotFoundException("Cannot locate resource " + BuildConfig.getImageName());
+        throw new FileNotFoundException("Cannot locate resource " + SqueakConfig.getImageName());
     }
 
     /**
@@ -63,7 +60,7 @@ public class Starter {
     /**
      * @param args first arg may specify image file name
      */
-    public static void main(String[] args) throws IOException, NullPointerException, java.lang.ArrayIndexOutOfBoundsException {
+    public static void boot(String[] args) throws IOException, NullPointerException, java.lang.ArrayIndexOutOfBoundsException {
         SqueakVM.initSmallIntegerCache();
         SqueakImage img = args.length > 0 ? locateSavedImage(args[1])
                 : locateStartableImage();

@@ -29,16 +29,13 @@ THE SOFTWARE.
  continued to help whenever I was particularly stuck during the project.
 */
 
-package JSqueak;
+package org.jsqueak;
 
 public class Main {
-    public Main() {
-        // nothing to do
-    }
 
     public static void main(String[] args) {
         try {
-            Starter.main(new String[0]);
+            Starter.boot(new String[0]);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
