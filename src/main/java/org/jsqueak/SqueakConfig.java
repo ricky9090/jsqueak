@@ -23,7 +23,7 @@ public class SqueakConfig {
     public static final String SQUEAK_IMAGE_V22 = "squeak22.image.gz";  // original image of full version Squeak 2.2
 
     public static String getImageName() {
-        return "/image/" + SQUEAK_IMAGE_V22;
+        return "/image/" + MINI_IMAGE;
     }
 
     public static final int DISPLAY_POLICY = 1;

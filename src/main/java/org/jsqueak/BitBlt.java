@@ -120,10 +120,13 @@ public class BitBlt {
         isWarping = doWarp;
         Object[] bbPointers = bbObject.pointers;
         combinationRule = checkIntValue(bbPointers[3]);
-        /*if (!success || (combinationRule < 0) || (combinationRule > (41 - 2)))
-            return false;*/
-        if (!SqueakVM.INSTANCE.isSuccess() || (combinationRule < 0) || (combinationRule > 33))
+
+        if (!SqueakVM.INSTANCE.isSuccess()
+                || (combinationRule < 0)
+                || (combinationRule > (_BBOpTable.length - 2))) {
             return false;
+        }
+
         if (combinationRule >= 16 && combinationRule <= 17)
             return false;
         destForm = bbPointers[0];
@@ -1007,7 +1010,7 @@ public class BitBlt {
         int execute(int sourceWord, int destinationWord);
     }
 
-    private IMergeFn[] _BBOpTable = new IMergeFn[50];
+    private IMergeFn[] _BBOpTable = new IMergeFn[35];
 
 
     /*

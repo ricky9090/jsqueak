@@ -419,7 +419,7 @@ class SqueakPrimitiveHandler {
                     popNandPush(5, primitiveStringReplace()); // string and array replace
                     break;
                 case 106:
-                    popNandPush(1, makePointWithXandY(SqueakVM.smallFromInt(640), SqueakVM.smallFromInt(480))); // actualScreenSize // FIXME: Use real size
+                    primitiveScreenSize();
                     break;
                 case 107:
                     popNandPush(1, primitiveMouseButtons()); // Sensor mouseButtons
@@ -540,6 +540,9 @@ class SqueakPrimitiveHandler {
                     break;
                 case 233:
                     primitiveSetFullScreen();
+                    break;
+                case 699:
+                    primitiveDebug();
                     break;
                 default:
                     return false;
@@ -1035,8 +1038,8 @@ class SqueakPrimitiveHandler {
         }
     }
 
-    private boolean primitiveNext()  //Not yet implemented... 
-    {
+    //Not yet implemented...
+    private boolean primitiveNext() {
         // PrimitiveNext should succeed only if the stream's array is in the atCache.
         // Otherwise failure will lead to proper message lookup of at: and
         // subsequent installation in the cache if appropriate."
@@ -1322,26 +1325,37 @@ class SqueakPrimitiveHandler {
     }
 
     private void beDisplay(SqueakObject displayObj) {
-        SqueakLogger.log("displayObj: " + displayObj.toString());
+        SqueakLogger.log("beDisplay: " + displayObj.toString());
         SqueakVM.FormCache disp = vm.newFormCache(displayObj);
         if (disp.squeakForm == null) {
             throw PrimitiveFailed;
         }
-        SqueakLogger.log("    disp depth: " + disp.depth);
-        SqueakLogger.log("    disp pixPerWord: " + disp.pixPerWord);
-        SqueakLogger.log("    disp pitch: " + disp.pitch);
-        SqueakLogger.log("    disp bits length: " + disp.bits.length);
+        SqueakLogger.log_D(SqueakLogger.LOG_BLOCK_HEADER);
+        SqueakLogger.log_D("    | Display size: " + disp.width + "@" + disp.height);
+        SqueakLogger.log_D("    | Display depth: " + disp.depth);
+        SqueakLogger.log_D("    | Display pixPerWord: " + disp.pixPerWord);
+        SqueakLogger.log_D("    | Display pitch: " + disp.pitch);
+        SqueakLogger.log_D("    | Display bits length: " + disp.bits.length);
+        SqueakLogger.log_D(SqueakLogger.LOG_BLOCK_ENDDER);
 
         vm.specialObjects[Squeak.splOb_TheDisplay] = displayObj;
         displayBitmap = disp.bits;
-        boolean remap = theDisplay != null;
+
+        boolean remap = false;
+        if (theDisplay != null) {
+            remap = true;
+        }
+
         if (remap) {
             Dimension requestedExtent = new Dimension(disp.width, disp.height);
-            if (!theDisplay.getExtent().equals(requestedExtent)) {
-                System.err.println("Squeak: changing screen size to " + disp.width + "@" + disp.height);
+            SqueakLogger.log_D("Squeak: changing screen size to " + disp.width + "@" + disp.height);
+            if (theDisplay.getExtent().width != requestedExtent.width
+                    && theDisplay.getExtent().height != requestedExtent.height) {
+                SqueakLogger.log_E("Screen size mismatch! Rechanging screen size to " + disp.width + "@" + disp.height);
                 theDisplay.setExtent(requestedExtent);
             }
         } else {
+            // bind Screen
             theDisplay = new Screen("Squeak", disp.width, disp.height, disp.depth, vm);
             theDisplay.getFrame().addWindowListener(new WindowAdapter() {
                                                         public void windowClosing(WindowEvent evt) {
@@ -1352,23 +1366,29 @@ class SqueakPrimitiveHandler {
                                                     }
             );
         }
-        displayBitmapInBytes = new byte[displayBitmap.length * 4];
-        //displayBitmapInBytes = new byte[1_228_800]; // fix size for 32bit color model
-        displayBitmapInInts = new int[307_200]; // fix size for 32bit color model
-        displayBitmapFromOrg = new int[displayBitmap.length];
 
-        /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes,
-                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
-        /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts,
-                new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);*/
+
+        displayBitmapFromOrg = new int[displayBitmap.length];
         copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg,
                 new Rectangle(0, 0, disp.width, disp.height), disp.pitch, disp.depth);
 
-        //theDisplay.setBits(displayBitmapInBytes, disp.depth);
-        //theDisplay.setBitsAlter(displayBitmapInInts, disp.depth);
+
         theDisplay.setBitsV2(displayBitmapFromOrg, disp.depth);
-        if (!remap)
+        if (!remap) {
             theDisplay.open();
+        }
+    }
+
+    private void copyImageFromOld(int[] old, int[] after) {
+        if (old.length <= after.length) {
+            for(int i = 0; i < old.length; i++) {
+                after[i] = old[i];
+            }
+        } else {
+            for(int i = 0; i < after.length; i++) {
+                after[i] = old[i];
+            }
+        }
     }
 
     private void beCursor(int argCount) {
@@ -1434,10 +1454,6 @@ class SqueakPrimitiveHandler {
 
         Rectangle affectedArea = bitbltTable.copyBits();
         if (affectedArea != null && theDisplay != null) {
-            /*copyBitmapToByteArray(displayBitmap, displayBitmapInBytes, affectedArea,
-                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
-            /*copyBitmapToIntArray(displayBitmap, displayBitmapInInts, affectedArea,
-                    bitbltTable.dest.pitch, bitbltTable.dest.depth);*/
             copyBitmapIntToInt(displayBitmap, displayBitmapFromOrg, affectedArea,
                     bitbltTable.dest.pitch, bitbltTable.dest.depth);
             theDisplay.redisplay(false, affectedArea);
@@ -1489,77 +1505,6 @@ class SqueakPrimitiveHandler {
         }
     }
 
-    /**
-     * for testing ColorMode in 32bit depth<br>
-     * very slow, should be Deprecated
-     */
-    @Deprecated
-    private void copyBitmapToIntArray(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
-        if (depth == 1) {
-            //System.out.println("copyBitmapToIntArray 1bit mode");
-            copyBitmapMode1BitTo1Int(words, bitmapData, rect, raster, depth);
-        } else if (depth == 8) {
-            //System.out.println("copyBitmapToIntArray 8bit mode");
-            copyBitmapMode8BitTo1Int(words, bitmapData, rect, raster, depth);
-        }
-    }
-
-    /**
-     *  32 pixel/integer  (span)=> 1 pixel/integer
-     */
-    private void copyBitmapMode1BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
-        int wordsLen = words.length;  //should be 9600(word) aka 307200(1bit-pixel)
-        int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
-        // FIXME skip for #beCursor because we use system default cursor
-        if (words.length != 9600) {
-            return;
-        }
-
-        // map 1bit => 32bit
-        int word;
-        for (int i = 0; i < words.length; i++) {
-            word = (words[i]);  // actual 32 pixel
-            for (int j = 0; j < 32; j++) {
-                int pixel = (word >> (31 - j)) & 0x01;  // get 1 bit
-                int pixelIndex = 32 * i + j;
-                int bit = pixel == 1 ? 0x00 : 0xFF;
-                // convert pixel to ARGB 32bit format
-                int pixel32bit = (0xFF << 24) | (bit << 16) | (bit << 8) | bit;
-                bitmapData[pixelIndex] = pixel32bit;
-            }
-        }
-    }
-
-    /**
-     *  4 pixel/integer  (span)=> 1 pixel/integer
-     */
-    private void copyBitmapMode8BitTo1Int(int[] words, int[] bitmapData, Rectangle rect, int raster, int depth) {
-        int wordsLen = words.length;  //should be 76,800(word) aka 307,200(8bit-pixel)
-        int bytesLen = bitmapData.length; // should be 307200(word) aka 307200(32bit-pixel)
-        // FIXME skip for #beCursor because we use system default cursor
-        if (words.length != 76800) {
-            return;
-        }
-
-        // map 8bit => 32bit
-        int word;
-        for (int i = 0; i < words.length; i++) {
-            word = (words[i]);  // actual 4 pixel
-            //System.out.println("word : " + Integer.toHexString(word));
-            for (int j = 0; j < 4; j++) {
-                int pixel = (word >> (32 - 8 * (3-j))) & 0xFF;  // get 8 bit
-
-                int pixelIndex = 4 * i + j;
-                int alpha = 0x88;
-                int red = ((pixel >> 5) & 0x07) * 32;
-                int green = ((pixel >> 2) & 0x07) * 32;
-                int blue = ((pixel) & 0x03) * 64;
-                // convert pixel to ARGB 32bit format
-                int pixel32bit = (alpha << 24) | (red << 16) | (green << 8) | blue;
-                bitmapData[pixelIndex] = pixel32bit;
-            }
-        }
-    }
 
     /**
      * direct copy bitblt bitmap to int buffer
@@ -1641,6 +1586,21 @@ class SqueakPrimitiveHandler {
         }
 
         vm.pop();
+    }
+
+    private void primitiveScreenSize() {
+        int width = 640;
+        int height = 480;
+        if (theDisplay != null && theDisplay.fExtent != null) {
+            width = theDisplay.fExtent.width;
+            height = theDisplay.fExtent.height;
+        }
+        SqueakLogger.log("primitiveScreenSize width: " + width + " height: " + height);
+        popNandPush(1, makePointWithXandY(SqueakVM.smallFromInt(width), SqueakVM.smallFromInt(height))); // actualScreenSize
+    }
+
+    private void primitiveDebug() {
+        SqueakLogger.log_D("primitiveDebug");
     }
 
     // endregion more-primitive-for-squeak
