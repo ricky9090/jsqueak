@@ -72,25 +72,46 @@ class KeyboardQueue implements KeyListener {
 
     private int fModifierKeys = 0;
 
+    private InputDispatchThread inputDispatch;
+
+    private final Object lockObj = new Object();
+
     KeyboardQueue(SqueakVM squeakVM) {
         fSqueakVM = squeakVM;
+        inputDispatch = new InputDispatchThread();
+        inputDispatch.start();
     }
 
-    // -- JSqueak interface
+    // region JSqueak interface
 
-    int peek() {
-        return fCharQueue.isEmpty() ? 0 : keycode((Character) fCharQueue.get(0));
+    public int peek() {
+        synchronized (lockObj) {
+            /*if (fCharQueue.size() > 0) {
+                System.out.println("peek: " + fCharQueue.get(0));
+            }*/
+
+            return fCharQueue.isEmpty() ? 0 : keycode((Character) fCharQueue.get(0));
+        }
     }
 
-    int next() {
-        return keycode((Character) fCharQueue.remove(0));
+    public int next() {
+        synchronized (lockObj) {
+            /*if (fCharQueue.size() > 0) {
+                System.out.println("next: " + fCharQueue.get(0));
+            }*/
+
+            return keycode((Character) fCharQueue.remove(0));
+        }
     }
 
     int modifierKeys() {
         return fModifierKeys;
     }
 
-    // -- KeyListener methods
+    // endregion
+
+    // region KeyListener methods
+
     @Override
     public void keyPressed(KeyEvent event) {
         fModifierKeys = mapModifierKey(event);
@@ -115,14 +136,18 @@ class KeyboardQueue implements KeyListener {
         addToQueue(event.getKeyChar());
     }
 
-    // -- Private methods
+    // endregion
+
+    // region Private methods
 
     private void addToQueue(char keyChar) {
-        if (fCharQueue.size() < TYPEAHEAD_LIMIT) {
-            fCharQueue.add(new Character(keyChar));
+        synchronized (lockObj) {
+            if (fCharQueue.size() < TYPEAHEAD_LIMIT) {
+                fCharQueue.add(new Character(keyChar));
+            }
         }
-
-        fSqueakVM.wakeVM();
+        // move to dispatching thread
+        //fSqueakVM.wakeVM();
     }
 
     private static int mapModifierKey(KeyEvent event) {
@@ -157,5 +182,28 @@ class KeyboardQueue implements KeyListener {
 
     private static int keycode(Character c) {
         return c.charValue() & 255;
+    }
+
+    // endregion
+
+    public void stopDispatching() {
+        inputDispatch.setDispating(false);
+    }
+
+    class InputDispatchThread extends Thread {
+
+        boolean dispating = true;
+
+        @Override
+        public void run() {
+            while (dispating) {
+                fSqueakVM.wakeVMFromKeyboardThread();
+            }
+            SqueakLogger.log_D("quit input dispatch thread");
+        }
+
+        public void setDispating(boolean dispating) {
+            this.dispating = dispating;
+        }
     }
 }

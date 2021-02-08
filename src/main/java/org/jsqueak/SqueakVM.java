@@ -1625,13 +1625,38 @@ public class SqueakVM {
         }
     }
 
-    void wakeVM() {
+    /**
+     * Mouse input thread will wake VM only when event is triggered<br>
+     * since MouseEvent is a high frequency event
+     */
+    void wakeVMFromMouseThread() {
         screenEvent = true;
         synchronized (this) {
             notify();
         }
         try {
-            Thread.sleep(0, 200);
+            //System.out.println("mouse thread " + Thread.currentThread());
+            Thread.sleep(16);
+        } catch (InterruptedException e) {
+        }
+
+        screenEvent = false;
+    }
+
+    /**
+     * Keyboard input thread will wake vm in a while loop<br>
+     * at frequency of 60 times/second<br>
+     * since keyboard input is a low frequency event<br>
+     * keep notifying can reduce lag
+     */
+    void wakeVMFromKeyboardThread() {
+        screenEvent = true;
+        synchronized (this) {
+            notify();
+        }
+        try {
+            //System.out.println("keyboard thread " + Thread.currentThread());
+            Thread.sleep(16);
         } catch (InterruptedException e) {
         }
 

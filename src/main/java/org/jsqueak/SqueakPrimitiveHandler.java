@@ -1393,7 +1393,7 @@ class SqueakPrimitiveHandler {
                                                         public void windowClosing(WindowEvent evt) {
                                                             // TODO ask before shutdown
                                                             // FIXME at least lock out quitting until concurrent image save has finished
-                                                            exit(1);
+                                                            theDisplay.exit();
                                                         }
                                                     }
             );
@@ -1485,7 +1485,9 @@ class SqueakPrimitiveHandler {
         // TODO how to handle third-party interruptions?
         try {
             synchronized (vm) {
-                while (!vm.screenEvent) vm.wait(millis);
+                while (!vm.screenEvent) {
+                    vm.wait(millis);
+                }
             }
         } catch (InterruptedException e) {
         }

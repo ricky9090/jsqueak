@@ -37,25 +37,29 @@ class MouseStatus extends MouseInputAdapter {
         throw new RuntimeException("unknown mouse button in event");
     }
 
+    @Override
     public void mouseMoved(MouseEvent evt) {
         fX = evt.getX();
         fY = evt.getY();
-        fSqueakVM.wakeVM();
+        fSqueakVM.wakeVMFromMouseThread();
     }
 
+    @Override
     public void mouseDragged(MouseEvent evt) {
         fX = evt.getX();
         fY = evt.getY();
-        fSqueakVM.wakeVM();
+        fSqueakVM.wakeVMFromMouseThread();
     }
 
+    @Override
     public void mousePressed(MouseEvent evt) {
         fButtons |= mapButton(evt);
-        fSqueakVM.wakeVM();
+        fSqueakVM.wakeVMFromMouseThread();
     }
 
+    @Override
     public void mouseReleased(MouseEvent evt) {
         fButtons &= ~mapButton(evt);
-        fSqueakVM.wakeVM();
+        fSqueakVM.wakeVMFromMouseThread();
     }
 }

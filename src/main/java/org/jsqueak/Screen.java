@@ -340,4 +340,14 @@ public class Screen {
     public void logging(String msg) {
 
     }
+
+    public void exit() {
+        fKeyboardQueue.stopDispatching();
+        fFrame.setVisible(false);
+        fFrame.dispose();
+        if (WITH_HEARTBEAT) {
+            fHeartBeat.stop();
+        }
+        System.exit(1);
+    }
 }
