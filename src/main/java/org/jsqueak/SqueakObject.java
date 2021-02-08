@@ -129,21 +129,26 @@ public class SqueakObject {
     }
 
     public int bitsSize() {
-        if (bits == null)
+        if (bits == null) {
             return 0;
-        if (bits instanceof byte[])
+        }
+        if (bits instanceof byte[]) {
             return ((byte[]) bits).length;
-        if (bits instanceof Double)
+        }
+        if (bits instanceof Double) {
             return 2;
+        }
         return ((int[]) bits).length;
     }
 
     //same as class.classInstSize, but faster from format
     public int instSize() {
-        if (format > 4 || format == 2) //indexable fields only
+        if (format > 4 || format == 2) { //indexable fields only
             return 0;
-        if (format < 2)  //indexable fields only
+        }
+        if (format < 2) { //indexable fields only
             return pointers.length;
+        }
         return ((SqueakObject) sqClass).classInstSize();  //0-255
     }
 
@@ -168,12 +173,14 @@ public class SqueakObject {
         format = other.format;
         pointers = (Object[]) other.pointers.clone();
         Object otherBits = other.bits;
-        if (otherBits == null)
+        if (otherBits == null) {
             return;
-        if (otherBits instanceof byte[])
+        }
+        if (otherBits instanceof byte[]) {
             bits = ((byte[]) other.bits).clone();
-        else if (otherBits instanceof int[])
+        } else if (otherBits instanceof int[]) {
             bits = ((int[]) other.bits).clone();
+        }
     }
 
     // isn't this slow?'
@@ -200,10 +207,11 @@ public class SqueakObject {
 
     public int methodPrimitiveIndex() {
         int primBits = (methodHeader()) & 0x300001FF;
-        if (primBits > 0x1FF)
+        if (primBits > 0x1FF) {
             return (primBits & 0x1FF) + (primBits >> 19);
-        else
+        } else {
             return primBits;
+        }
     }
 
     //assn found in last literal
@@ -241,10 +249,11 @@ public class SqueakObject {
     public void install(Hashtable oopMap, Integer[] ccArray, SqueakObject floatClass) {
         //Install this object by decoding format, and rectifying pointers
         int ccInt = ((Integer) sqClass).intValue();
-        if ((ccInt > 0) && (ccInt < 32))
+        if ((ccInt > 0) && (ccInt < 32)) {
             sqClass = oopMap.get(ccArray[ccInt - 1]);
-        else
+        } else {
             sqClass = oopMap.get(sqClass);
+        }
         int nWords = ((int[]) bits).length;
         if (format < 5) {
             //Formats 0...4 -- Pointer fields
@@ -278,10 +287,11 @@ public class SqueakObject {
         Object[] ptrs = new Object[nWords];
         for (int i = 0; i < nWords; i++) {
             int oldOop = theBits[i];
-            if ((oldOop & 1) == 1)
+            if ((oldOop & 1) == 1) {
                 ptrs[i] = SqueakVM.smallFromInt(oldOop >> 1);
-            else
+            } else {
                 ptrs[i] = oopMap.get(new Integer(oldOop));
+            }
         }
         return ptrs;
     }
@@ -293,11 +303,13 @@ public class SqueakObject {
         int wordIx = wordOffset;
         int fourBytes = 0;
         for (int i = 0; i < nBytes; i++) {
-            if ((i & 3) == 0)
+            if ((i & 3) == 0) {
                 fourBytes = theBits[wordIx++];
+            }
             int pickByte = (fourBytes >> (8 * (3 - (i & 3)))) & 255;
-            if (pickByte >= 128)
+            if (pickByte >= 128) {
                 pickByte = pickByte - 256;
+            }
             newBits[i] = (byte) pickByte;
         }
         return newBits;
@@ -310,16 +322,18 @@ public class SqueakObject {
     public String asString() {
         // debugging only: if body consists of bytes, make a Java String from them
         if (bits != null && bits instanceof byte[]) {
-            if (pointers != null)
+            if (pointers != null) {
                 return "a CompiledMethod";
-            else
+            } else {
                 return new String((byte[]) bits);
+            }
         } else {
             SqueakObject itsClass = this.getSqClass();
-            if (itsClass.pointersSize() >= 9)
+            if (itsClass.pointersSize() >= 9) {
                 return "a " + itsClass.classGetName().asString();
-            else
+            } else {
                 return "Class " + this.classGetName().asString();
+            }
         }
     }
 

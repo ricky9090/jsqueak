@@ -375,7 +375,7 @@ class SqueakPrimitiveHandler {
             case 101:
                 return beCursor(argCount); // Cursor.beCursor
             case 102:
-                return beDisplay((SqueakObject) vm.top()); // DisplayScreen.beDisplay
+                return beDisplay(argCount); // DisplayScreen.beDisplay
             case 103:
                 return primitiveScanCharacters();
             case 105:
@@ -709,11 +709,17 @@ class SqueakPrimitiveHandler {
     boolean primitiveMakePoint() {
         Object x = vm.stackValue(1);
         Object y = vm.stackValue(0);
+        if (!vm.is_STInteger(x) || !vm.is_STInteger(y)) {
+            success = false;
+            return false;
+        }
+
         vm.popNandPush(2, makePointWithXandY(x, y));
         return true;
     }
 
     private SqueakObject makePointWithXandY(Object x, Object y) {
+        //SqueakLogger.log_D("make point x: " + x + ",  y: " + y);
         SqueakObject pointClass = (SqueakObject) vm.specialObjects[Squeak.splOb_ClassPoint];
         SqueakObject newPoint = vm.instantiateClass(pointClass, 0);
         newPoint.setPointer(Squeak.Point_x, x);
@@ -1348,12 +1354,17 @@ class SqueakPrimitiveHandler {
         return SqueakVM.smallFromInt(((int) (System.currentTimeMillis() & (long) (SqueakVM.maxSmallInt >> 1))));
     }
 
-    private boolean beDisplay(SqueakObject displayObj) {
-        SqueakLogger.log("beDisplay: " + displayObj.toString());
+    private boolean beDisplay(int argCount) {
+        SqueakObject displayObj = (SqueakObject) vm.top();
         SqueakVM.FormCache disp = vm.newFormCache(displayObj);
         if (disp.squeakForm == null) {
             return false;
         }
+        vm.specialObjects[Squeak.splOb_TheDisplay] = displayObj;
+        displayBitmap = disp.bits;
+        vm.popN(argCount);
+
+        SqueakLogger.log("beDisplay: " + displayObj.toString());
         SqueakLogger.log_D(SqueakLogger.LOG_BLOCK_HEADER);
         SqueakLogger.log_D("    | Display size: " + disp.width + "@" + disp.height);
         SqueakLogger.log_D("    | Display depth: " + disp.depth);
@@ -1361,9 +1372,6 @@ class SqueakPrimitiveHandler {
         SqueakLogger.log_D("    | Display pitch: " + disp.pitch);
         SqueakLogger.log_D("    | Display bits length: " + disp.bits.length);
         SqueakLogger.log_D(SqueakLogger.LOG_BLOCK_ENDDER);
-
-        vm.specialObjects[Squeak.splOb_TheDisplay] = displayObj;
-        displayBitmap = disp.bits;
 
         boolean remap = false;
         if (theDisplay != null) {

@@ -265,8 +265,12 @@ public class SqueakVM {
         return smallInt.intValue();
     }
 
+    public boolean is_STInteger(Object obj) {
+        return obj instanceof Integer;
+    }
+
     // FIXME
-    public boolean isSmallFloat(Object obj) {
+    public boolean is_STFloat(Object obj) {
         if (isSmallInt(obj)) {
             return false;
         }
@@ -352,7 +356,9 @@ public class SqueakVM {
                 case 13:
                 case 14:
                 case 15:
-                    push(((SqueakObject) receiver).getPointer(b & 0xF));
+                    push(
+                            ((SqueakObject) receiver).getPointer(b & 0xF)
+                    );
                     break;
 
                 // load temporary variable
@@ -372,7 +378,9 @@ public class SqueakVM {
                 case 29:
                 case 30:
                 case 31:
-                    push(homeContext.getPointer(Squeak.Context_tempFrameStart + (b & 0xF)));
+                    push(
+                            homeContext.getPointer(Squeak.Context_tempFrameStart + (b & 0xF))
+                    );
                     break;
 
                 // loadLiteral
@@ -408,7 +416,9 @@ public class SqueakVM {
                 case 61:
                 case 62:
                 case 63:
-                    push(method.methodGetLiteral(b & 0x1F));
+                    push(
+                            method.methodGetLiteral(b & 0x1F)
+                    );
                     break;
 
                 // loadLiteralIndirect
@@ -444,7 +454,10 @@ public class SqueakVM {
                 case 93:
                 case 94:
                 case 95:
-                    push(((SqueakObject) method.methodGetLiteral(b & 0x1F)).getPointer(Squeak.Assn_value));
+                    push(
+                            ((SqueakObject) method.methodGetLiteral(b & 0x1F))
+                                    .getPointer(Squeak.Assn_value)
+                    );
                     break;
 
                 // storeAndPop rcvr, temp
@@ -604,7 +617,9 @@ public class SqueakVM {
                 case 167:
                     b2 = nextByte();
                     pc += (((b & 7) - 4) * 256 + b2);
-                    if ((b & 7) < 4) checkForInterrupts();  //check on backward jumps (loops)
+                    if ((b & 7) < 4) {
+                        checkForInterrupts();  //check on backward jumps (loops)
+                    }
                     break;
                 // Long btp
                 case 168:
@@ -624,56 +639,75 @@ public class SqueakVM {
                 // Arithmetic Ops... + - < > <= >= = ~=    * / \ @ lshift: lxor: land: lor:
                 case 176:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) + stackInteger(0)))
+                    if (!pop2AndPushIntResult(stackInteger(1) + stackInteger(0))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;   // PLUS +
                 case 177:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) - stackInteger(0)))
+                    if (!pop2AndPushIntResult(stackInteger(1) - stackInteger(0))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;   // PLUS +
                 case 178:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) < stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) < stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // LESS <
                 case 179:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) > stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) > stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // GRTR >
                 case 180:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) <= stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) <= stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // LEQ <=
                 case 181:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) >= stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) >= stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // GEQ >=
                 case 182:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) == stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) == stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // EQU =
                 case 183:
                     success = true;
-                    if (!pushBoolAndPeek(stackInteger(1) != stackInteger(0))) sendSpecial(b & 0xF);
+                    if (!pushBoolAndPeek(stackInteger(1) != stackInteger(0))) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // NEQ ~=
                 case 184:
                     success = true;
-                    if (!pop2AndPushIntResult(safeMultiply(stackInteger(1), stackInteger(0))))
+                    if (!pop2AndPushIntResult(safeMultiply(stackInteger(1), stackInteger(0)))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;  // TIMES *
                 case 185:
                     success = true;
-                    if (!pop2AndPushIntResult(quickDivide(stackInteger(1), stackInteger(0))))
+                    if (!pop2AndPushIntResult(quickDivide(stackInteger(1), stackInteger(0)))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;  // Divide /
                 case 186:
                     success = true;
-                    if (!pop2AndPushIntResult(mod(stackInteger(1), stackInteger(0))))
+                    if (!pop2AndPushIntResult(mod(stackInteger(1), stackInteger(0)))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;  // MOD \\
                 case 187:
                     success = true;
-                    if (!primHandler.primitiveMakePoint()) sendSpecial(b & 0xF);
+                    if (!primHandler.primitiveMakePoint()) {
+                        sendSpecial(b & 0xF);
+                    }
                     break;  // MakePt int@int
                 case 188:
                     success = true; // Something is wrong with this one...
@@ -682,18 +716,21 @@ public class SqueakVM {
                     break; // bitShift:
                 case 189:
                     success = true;
-                    if (!pop2AndPushIntResult(div(stackInteger(1), stackInteger(0))))
+                    if (!pop2AndPushIntResult(div(stackInteger(1), stackInteger(0)))) {
                         sendSpecial(b & 0xF);
+                    }
                     break;  // Divide //
                 case 190:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) & stackInteger(0)))
+                    if (!pop2AndPushIntResult(stackInteger(1) & stackInteger(0))) {
                         sendSpecial(b & 0xF);
+                    }
                     break; // bitAnd:
                 case 191:
                     success = true;
-                    if (!pop2AndPushIntResult(stackInteger(1) | stackInteger(0)))
+                    if (!pop2AndPushIntResult(stackInteger(1) | stackInteger(0))) {
                         sendSpecial(b & 0xF);
+                    }
                     break; // bitOr:
 
                 // at:, at:put:, size, next, nextPut:, ...
@@ -713,8 +750,9 @@ public class SqueakVM {
                 case 205:
                 case 206:
                 case 207:
-                    if (!primHandler.quickSendOther(receiver, b & 0xF))
+                    if (!primHandler.quickSendOther(receiver, b & 0xF)) {
                         sendSpecial((b & 0xF) + 16);
+                    }
                     break;
 
                 // Send Literal Selector with 0, 1, and 2 args
@@ -780,25 +818,28 @@ public class SqueakVM {
         //Check for interrupts at sends and backward jumps
         SqueakObject sema;
         int now;
-        if (interruptCheckCounter-- > 0)
+        if (interruptCheckCounter-- > 0) {
             return; //only really check every 100 times or so
+        }
         //Mask so same wrap as primitiveMillisecondClock
         now = (int) (System.currentTimeMillis() & (long) millisecondClockMask);
         if (now < lastTick) {
             //millisecond clock wrapped"
             nextPollTick = now + (nextPollTick - lastTick);
-            if (nextWakeupTick != 0)
+            if (nextWakeupTick != 0) {
                 nextWakeupTick = now + (nextWakeupTick - lastTick);
+            }
         }
         //Feedback logic attempts to keep interrupt response around 3ms...
-        if ((now - lastTick) < interruptChecksEveryNms)  //wrapping is not a concern
-        {
+        if ((now - lastTick) < interruptChecksEveryNms) { //wrapping is not a concern
+
             interruptCheckCounterFeedBackReset += 10;
         } else {
-            if (interruptCheckCounterFeedBackReset <= 1000)
+            if (interruptCheckCounterFeedBackReset <= 1000) {
                 interruptCheckCounterFeedBackReset = 1000;
-            else
+            } else {
                 interruptCheckCounterFeedBackReset -= 12;
+            }
         }
         interruptCheckCounter = interruptCheckCounterFeedBackReset; //reset the interrupt check counter"
         lastTick = now; //used to detect wraparound of millisecond clock
@@ -812,14 +853,16 @@ public class SqueakVM {
         if (interruptPending) {
             interruptPending = false; //reset interrupt flag
             sema = getSpecialObject(Squeak.splOb_TheInterruptSemaphore);
-            if (sema != nilObj)
+            if (sema != nilObj) {
                 primHandler.synchronousSignal(sema);
+            }
         }
         if ((nextWakeupTick != 0) && (now >= nextWakeupTick)) {
             nextWakeupTick = 0; //reset timer interrupt
             sema = getSpecialObject(Squeak.splOb_TheTimerSemaphore);
-            if (sema != nilObj)
+            if (sema != nilObj) {
                 primHandler.synchronousSignal(sema);
+            }
         }
         //  if (pendingFinalizationSignals > 0) { //signal any pending finalizations
         //            sema= getSpecialObject(Squeak.splOb_ThefinalizationSemaphore);
@@ -835,8 +878,9 @@ public class SqueakVM {
             pc += delta;
             return;
         }
-        if (top == (condition ? falseObj : trueObj))
+        if (top == (condition ? falseObj : trueObj)) {
             return;
+        }
         push(top); //Uh-oh it's not even a boolean (that we know of ;-).  Restore stack...
         send((SqueakObject) specialObjects[Squeak.splOb_SelectorMustBeBoolean], 1, false);
     }
@@ -932,16 +976,20 @@ public class SqueakVM {
     }
 
     public void doReturn(Object returnValue, SqueakObject targetContext) {
-        if (targetContext == nilObj)
+        if (targetContext == nilObj) {
             cannotReturn();
-        if (targetContext.getPointer(Squeak.Context_instructionPointer) == nilObj)
+        }
+        if (targetContext.getPointer(Squeak.Context_instructionPointer) == nilObj) {
             cannotReturn();
+        }
         SqueakObject thisContext = activeContext;
         while (thisContext != targetContext) {
-            if (thisContext == nilObj)
+            if (thisContext == nilObj) {
                 cannotReturn();
-            if (isUnwindMarked(thisContext))
+            }
+            if (isUnwindMarked(thisContext)) {
                 aboutToReturn(returnValue, thisContext);
+            }
             thisContext = thisContext.getPointerNI(Squeak.Context_sender);
         }
         //No unwind to worry about, just peel back the stack (usually just to sender)
@@ -983,16 +1031,18 @@ public class SqueakVM {
 
     int checkSmallInt(Object maybeSmall) {
         // returns an int and sets success
-        if (isSmallInt(maybeSmall))
-            return intFromSmall(((Integer) maybeSmall));
+        if (maybeSmall instanceof Integer) {
+            return (Integer) maybeSmall;
+        }
         success = false;
         return 1;
     }
 
     public boolean pop2AndPushIntResult(int intResult) {
         //Note returns sucess boolean
-        if (!success)
+        if (!success) {
             return false;
+        }
         Object smallInt = smallFromInt(intResult);
         if (smallInt != null) {
             popNandPush(2, smallInt);
@@ -1038,46 +1088,53 @@ public class SqueakVM {
     // Java rounds toward zero, we also need towards -infinity, so...
     public static int div(int rcvr, int arg) {
         // do this without floats asap
-        if (arg == 0)
+        if (arg == 0) {
             return nonSmallInt;  // fail if divide by zero
+        }
         return (int) Math.floor((double) rcvr / arg);
     }
 
     public static int quickDivide(int rcvr, int arg) {
         // only handles exact case
-        if (arg == 0)
+        if (arg == 0) {
             return nonSmallInt;  // fail if divide by zero
+        }
         int result = rcvr / arg;
-        if (result * arg == rcvr)
+        if (result * arg == rcvr) {
             return result;
+        }
         return nonSmallInt;   // fail if result is not exact
     }
 
     public static int mod(int rcvr, int arg) {
-        if (arg == 0)
+        if (arg == 0) {
             return nonSmallInt;  // fail if divide by zero
+        }
         return rcvr - div(rcvr, arg) * arg;
     }
 
     public static int safeMultiply(int multiplicand, int multiplier) {
-        // FIXME
         int product = multiplier * multiplicand;
-        return product;
         //check for overflow by seeing if computation is reversible
-        /*if (multiplier == 0)
+        // FIXME
+        if (multiplier == 0) {
             return product;
-        if ((product / multiplier) == multiplicand)
+        }
+        if ((product / multiplier) == multiplicand) {
             return product;
-        return nonSmallInt;   //non-small result will cause failure*/
+        }
+        return nonSmallInt;   //non-small result will cause failure
     }
 
     public static int safeShift(int bitsToShift, int shiftCount) {
-        if (shiftCount < 0)
+        if (shiftCount < 0) {
             return bitsToShift >> -shiftCount; //OK ot lose bits shifting right
+        }
         //check for lost bits by seeing if computation is reversible
         int shifted = bitsToShift << shiftCount;
-        if ((shifted >>> shiftCount) == bitsToShift)
+        if ((shifted >>> shiftCount) == bitsToShift) {
             return shifted;
+        }
         return nonSmallInt;   //non-small result will cause failure 
     }
 
@@ -1109,8 +1166,9 @@ public class SqueakVM {
 
     public MethodCacheEntry findSelectorInClass(SqueakObject selector, int argCount, SqueakObject startingClass) {
         MethodCacheEntry cacheEntry = findMethodCacheEntry(selector, startingClass);
-        if (cacheEntry.method != null)
+        if (cacheEntry.method != null) {
             return cacheEntry; // Found it in the method cache
+        }
         SqueakObject currentClass = startingClass;
         SqueakObject mDict;
         while (!(currentClass == nilObj)) {
@@ -1136,8 +1194,9 @@ public class SqueakVM {
         //if (printString(selector).equals("zork"))
         //    System.err.println(printString(selector));
         SqueakObject dnuSel = getSpecialObject(Squeak.splOb_SelectorDoesNotUnderstand);
-        if (selector == dnuSel) // Cannot find #doesNotUnderstand: -- unrecoverable error.
+        if (selector == dnuSel) { // Cannot find #doesNotUnderstand: -- unrecoverable error.
             throw new RuntimeException("Recursive not understood error encountered");
+        }
         SqueakObject dnuMsg = createActualMessage(selector, argCount, startingClass); //The argument to doesNotUnderstand:
         popNandPush(argCount, dnuMsg);
         return findSelectorInClass(dnuSel, 1, startingClass);
@@ -1150,8 +1209,9 @@ public class SqueakVM {
         SqueakObject message = instantiateClass(getSpecialObject(Squeak.splOb_ClassMessage), 0);
         message.setPointer(Squeak.Message_selector, selector);
         message.setPointer(Squeak.Message_arguments, argArray);
-        if (message.pointers.length < 3)
+        if (message.pointers.length < 3) {
             return message; //Early versions don't have lookupClass
+        }
         message.setPointer(Squeak.Message_lookupClass, cls);
         return message;
     }
@@ -1170,11 +1230,13 @@ public class SqueakVM {
                 SqueakObject methArray = mDict.getPointerNI(Squeak.MethodDict_array);
                 return methArray.getPointerNI(index - Squeak.MethodDict_selectorStart);
             }
-            if (nextSelector == nilObj)
+            if (nextSelector == nilObj) {
                 return nilObj;
+            }
             if (++index == dictSize) {
-                if (hasWrapped)
+                if (hasWrapped) {
                     return nilObj;
+                }
                 index = Squeak.MethodDict_selectorStart;
                 hasWrapped = true;
             }
@@ -1216,8 +1278,9 @@ public class SqueakVM {
         sp = newSP;
         storeContextRegisters(); // not really necessary, I claim
         receiver = newContext.getPointer(Squeak.Context_receiver);
-        if (receiver != newRcvr)
+        if (receiver != newRcvr) {
             System.err.println("receiver doesnt match");
+        }
         checkForInterrupts();
     }
 
@@ -1290,18 +1353,21 @@ public class SqueakVM {
     public boolean primitivePerformWithArgs(SqueakObject lookupClass) {
         Object rcvr = stackValue(2);
         SqueakObject selector = (SqueakObject) stackValue(1);
-        if (isSmallInt(stackValue(0)))
+        if (isSmallInt(stackValue(0))) {
             return false;
+        }
         SqueakObject args = (SqueakObject) stackValue(0);
-        if (args.pointers == null)
+        if (args.pointers == null) {
             return false;
+        }
         int trueArgCount = args.pointers.length;
         System.arraycopy(args.pointers, 0, activeContext.pointers, sp - 1, trueArgCount);
         sp = sp - 2 + trueArgCount; //pop selector and array then push args
         MethodCacheEntry entry = findSelectorInClass(selector, trueArgCount, lookupClass);
         SqueakObject newMethod = entry.method;
-        if (newMethod.methodNumArgs() != trueArgCount)
+        if (newMethod.methodNumArgs() != trueArgCount) {
             return false;
+        }
         executeNewMethod(rcvr, newMethod, newMethod.methodNumArgs(), entry.primIndex);
         return true;
     }
@@ -1311,19 +1377,22 @@ public class SqueakVM {
         SqueakObject currentClass = getClass(stackValue(3));
         while (currentClass != lookupClass) {
             currentClass = (SqueakObject) currentClass.pointers[Squeak.Class_superclass];
-            if (currentClass == nilObj)
+            if (currentClass == nilObj) {
                 return false;
+            }
         }
         pop(); //pop the lookupClass for now
-        if (primitivePerformWithArgs(lookupClass))
+        if (primitivePerformWithArgs(lookupClass)) {
             return true;
+        }
         push(lookupClass); //restore lookupClass if failed
         return false;
     }
 
     public void recycleIfPossible(SqueakObject ctxt) {
-        if (!isMethodContext(ctxt))
+        if (!isMethodContext(ctxt)) {
             return;
+        }
         //if (isContext(ctxt)) return; //Defeats recycling of contexts
         if (ctxt.pointersSize() == (Squeak.Context_tempFrameStart + Squeak.Context_smallFrameSize)) {
             // Recycle small contexts
@@ -1422,10 +1491,12 @@ public class SqueakVM {
         for (int i = 0; i < 4; i++) {
             // 4 reprobes for now
             entry = methodCache[probe];
-            if (entry.selector == selector && entry.lkupClass == lkupClass)
+            if (entry.selector == selector && entry.lkupClass == lkupClass) {
                 return entry;
-            if (i == randomish)
+            }
+            if (i == randomish) {
                 firstProbe = probe;
+            }
             probe = (probe + selector.hash) & methodCacheMask;
         }
         entry = methodCache[firstProbe];
@@ -1442,8 +1513,9 @@ public class SqueakVM {
             // byteCount= byteCount;  // <-- break here
         }
         //        if (mod(byteCount,1000) != 0) return;
-        if (byteCount != -1)
+        if (byteCount != -1) {
             return;
+        }
         System.err.println();
         System.err.println(byteCount + " rcvr= " + printString(receiver));
         System.err.println("depth= " + stackDepth() + "; top= " + printString(top()));
@@ -1455,25 +1527,30 @@ public class SqueakVM {
     int stackDepth() {
         SqueakObject ctxt = activeContext;
         int depth = 0;
-        while ((ctxt = ctxt.getPointerNI(Squeak.Context_sender)) != nilObj)
+        while ((ctxt = ctxt.getPointerNI(Squeak.Context_sender)) != nilObj) {
             depth = depth + 1;
+        }
         return depth;
     }
 
     String printString(Object obj) {
         //Handles SqueakObjs and SmallInts as well
-        if (obj == null)
+        if (obj == null) {
             return "null";
-        if (isSmallInt(obj))
+        }
+        if (isSmallInt(obj)) {
             return "=" + ((Integer) obj).intValue();
-        else
+        } else {
             return ((SqueakObject) obj).asString();
+        }
     }
 
     void dumpStack() {
-        for (int i = 0; i < stackDepth(); i++)
-            if (stackedSelectors != null)
+        for (int i = 0; i < stackDepth(); i++) {
+            if (stackedSelectors != null) {
                 System.err.println(stackedReceivers[i] + " >> " + stackedSelectors[i]);
+            }
+        }
     }
 
     FormCache newFormCache(SqueakObject aForm) {
@@ -1503,36 +1580,46 @@ public class SqueakVM {
 
         boolean loadFrom(Object aForm) {
             //We do not reload if this is the same form as before
-            if (squeakForm == aForm)
+            if (squeakForm == aForm) {
                 return true;
+            }
             squeakForm = null; //Marks this as failed until very end...
-            if (isSmallInt(aForm))
+            if (isSmallInt(aForm)) {
                 return false;
+            }
             Object[] formPointers = ((SqueakObject) aForm).pointers;
-            if (formPointers == null || formPointers.length < 4)
+            if (formPointers == null || formPointers.length < 4) {
                 return false;
-            for (int i = 1; i < 4; i++)
-                if (!isSmallInt(formPointers[i]))
+            }
+            for (int i = 1; i < 4; i++) {
+                if (!isSmallInt(formPointers[i])) {
                     return false;
+                }
+            }
             Object bitsObject = formPointers[0];
             width = intFromSmall(((Integer) formPointers[1]));
             height = intFromSmall(((Integer) formPointers[2]));
             depth = intFromSmall(((Integer) formPointers[3]));
-            if ((width < 0) || (height < 0))
+            if ((width < 0) || (height < 0)) {
                 return false;
-            if (bitsObject == nilObj || isSmallInt(bitsObject))
+            }
+            if (bitsObject == nilObj || isSmallInt(bitsObject)) {
                 return false;
+            }
             msb = depth > 0;
-            if (depth < 0)
+            if (depth < 0) {
                 depth = 0 - depth;
+            }
             Object maybeBytes = ((SqueakObject) bitsObject).bits;
-            if (maybeBytes == null || maybeBytes instanceof byte[])
+            if (maybeBytes == null || maybeBytes instanceof byte[]) {
                 return false;  //Happens with compressed bits
+            }
             bits = (int[]) maybeBytes;
             pixPerWord = 32 / depth;
             pitch = (width + (pixPerWord - 1)) / pixPerWord;
-            if (bits.length != (pitch * height))
+            if (bits.length != (pitch * height)) {
                 return false;
+            }
             squeakForm = (SqueakObject) aForm; //Only now is it marked as OK
             return true;
         }

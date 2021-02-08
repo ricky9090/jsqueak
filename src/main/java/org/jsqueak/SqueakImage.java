@@ -193,9 +193,12 @@ public class SqueakImage {
 
     public short registerObject(SqueakObject obj) {
         //All enumerable objects must be registered
-        if ((otMaxUsed + 1) >= objectTable.length)
-            if (!getMoreOops(OTGrowSize))
+        if ((otMaxUsed + 1) >= objectTable.length) {
+            if (!getMoreOops(OTGrowSize)) {
                 throw new RuntimeException("Object table has reached capacity");
+            }
+        }
+
         objectTable[++otMaxUsed] = new WeakReference(obj);
         lastHash = 13849 + (27181 * lastHash);
         return (short) (lastHash & 0xFFF);
@@ -205,12 +208,14 @@ public class SqueakImage {
         int nullCount;
         int startingOtMaxUsed = otMaxUsed;
         for (int i = 0; i < 5; i++) {
-            if (i == 2)
+            if (i == 2) {
                 vm.clearCaches(); //only flush caches after two tries
+            }
             partialGC();
             nullCount = startingOtMaxUsed - otMaxUsed;
-            if (nullCount >= request)
+            if (nullCount >= request) {
                 return true;
+            }
         }
 
         // Sigh -- really need more space...
