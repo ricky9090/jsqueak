@@ -78,8 +78,9 @@ class FileSystemPrimitives {
      * ^ self primitiveFailed!
      */
     Object fileAtEnd(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile();
         try {
@@ -98,8 +99,9 @@ class FileSystemPrimitives {
      * ^ self primitiveFailed!
      */
     Object fileClose(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile();
         try {
@@ -121,8 +123,9 @@ class FileSystemPrimitives {
      * ^ self primitiveFailed!
      */
     Object getPosition(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile();
         try {
@@ -148,8 +151,9 @@ class FileSystemPrimitives {
      * ^ nil
      */
     Object openWritable(int argCount) {
-        if (argCount != 2)
+        if (argCount != 2) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject fileName = fHandler.stackNonInteger(1);
         SqueakObject writableFlag = fHandler.stackNonInteger(0);
@@ -178,8 +182,9 @@ class FileSystemPrimitives {
      * self halt: 'error reading file'!
      */
     Object readIntoStartingAtCount(int argCount) {
-        if (argCount != 4)
+        if (argCount != 4) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject byteArray = fHandler.stackNonInteger(2);
         int startIndex = fHandler.stackInteger(1) - 1;
@@ -210,8 +215,9 @@ class FileSystemPrimitives {
      * ^ self primitiveFailed!
      */
     Object fileSetPosition(int argCount) {
-        if (argCount != 2)
+        if (argCount != 2) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile(1);
         int pos = fHandler.stackPos32BitValue(0);
@@ -234,8 +240,9 @@ class FileSystemPrimitives {
      * ^ nil
      */
     Object fileDelete(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject fileName = fHandler.stackNonInteger(0);
 
@@ -253,8 +260,9 @@ class FileSystemPrimitives {
      * ^ self primitiveFailed!
      */
     Object fileSize(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile();
         try {
@@ -279,8 +287,9 @@ class FileSystemPrimitives {
      * self halt: 'File write error'! !
      */
     Object fileWrite(int argCount) {
-        if (argCount != 4)
+        if (argCount != 4) {
             throw fHandler.primitiveFailed();
+        }
 
         RandomAccessFile file = lookupFile(3);
         SqueakObject byteArray = fHandler.stackNonInteger(2);
@@ -311,8 +320,9 @@ class FileSystemPrimitives {
      * or to use a name that is already in use'!
      */
     Object fileRename(int argCount) {
-        if (argCount != 2)
+        if (argCount != 2) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject oldName = fHandler.stackNonInteger(1);
         SqueakObject newName = fHandler.stackNonInteger(0);
@@ -333,8 +343,9 @@ class FileSystemPrimitives {
      * self primitiveFailed
      */
     Object directoryCreate(int argCount) {
-        if (argCount != 1)
+        if (argCount != 1) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject fullPath = fHandler.stackNonInteger(0);
 
@@ -373,26 +384,31 @@ class FileSystemPrimitives {
      * self primitiveFailed.!
      */
     Object lookupEntryInIndex(int argCount) {
-        if (argCount != 2)
+        if (argCount != 2) {
             throw fHandler.primitiveFailed();
+        }
 
         SqueakObject fullPath = fHandler.stackNonInteger(1);
         int index = fHandler.stackInteger(0) - 1;
 
-        if (index < 0)
+        if (index < 0) {
             throw fHandler.primitiveFailed();
+        }
 
         String filename = fullPath.asString();
-        if (filename.trim().length() == 0)
+        if (filename.trim().length() == 0) {
             filename = "/";
+        }
 
         File directory = new File(fullPath.asString());
-        if (!directory.exists())
+        if (!directory.exists()) {
             throw fHandler.primitiveFailed();
+        }
 
         File[] paths = directory.listFiles();
-        if (index < paths.length)
+        if (index < paths.length) {
             return makeDirectoryEntryArray(paths[index]);
+        }
 
         return fHandler.squeakNil();
     }
@@ -442,8 +458,9 @@ class FileSystemPrimitives {
      */
     private RandomAccessFile lookupFile(int stackDepth) {
         SqueakObject fileId = fHandler.stackNonInteger(stackDepth);
-        if (!fFiles.containsKey(fileId))
+        if (!fFiles.containsKey(fileId)) {
             throw fHandler.primitiveFailed();
+        }
 
         return (RandomAccessFile) fFiles.get(fileId);
     }

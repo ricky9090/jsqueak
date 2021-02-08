@@ -68,7 +68,7 @@ class KeyboardQueue implements KeyListener {
 
     private final SqueakVM fSqueakVM;
 
-    private final List fCharQueue = new ArrayList();
+    private final List<Character> fCharQueue = new ArrayList();
 
     private int fModifierKeys = 0;
 
@@ -91,22 +91,26 @@ class KeyboardQueue implements KeyListener {
     }
 
     // -- KeyListener methods
-
+    @Override
     public void keyPressed(KeyEvent event) {
         fModifierKeys = mapModifierKey(event);
         char keyChar = mapSpecialKey(event);
-        if (keyChar != KeyEvent.CHAR_UNDEFINED)
+        if (keyChar != KeyEvent.CHAR_UNDEFINED) {
             addToQueue(keyChar);
+        }
     }
 
+    @Override
     public void keyReleased(KeyEvent event) {
         fModifierKeys = mapModifierKey(event);
     }
 
+    @Override
     public void keyTyped(KeyEvent event) {
         // Ignore the return key, mapSpecialKey() took care of it
-        if (event.getKeyChar() == '\n')
+        if (event.getKeyChar() == '\n') {
             return;
+        }
 
         addToQueue(event.getKeyChar());
     }
@@ -114,20 +118,24 @@ class KeyboardQueue implements KeyListener {
     // -- Private methods
 
     private void addToQueue(char keyChar) {
-        if (fCharQueue.size() < TYPEAHEAD_LIMIT)
+        if (fCharQueue.size() < TYPEAHEAD_LIMIT) {
             fCharQueue.add(new Character(keyChar));
+        }
 
         fSqueakVM.wakeVM();
     }
 
     private static int mapModifierKey(KeyEvent event) {
         int modifiers = 0;
-        if (event.isShiftDown())
+        if (event.isShiftDown()) {
             modifiers |= SHIFT_KEY;
-        if (event.isControlDown())
+        }
+        if (event.isControlDown()) {
             modifiers |= CONTROL_KEY;
-        if (event.isAltDown() || event.isMetaDown())
+        }
+        if (event.isAltDown() || event.isMetaDown()) {
             modifiers |= COMMAND_KEY;
+        }
 
         return modifiers;
     }
@@ -136,11 +144,13 @@ class KeyboardQueue implements KeyListener {
         int specialKeyIndex = 0;
         while (specialKeyIndex < JAVA_KEYS.length && JAVA_KEYS[specialKeyIndex] != evt.getKeyCode())
             specialKeyIndex++;
-        if (specialKeyIndex < JAVA_KEYS.length)
+        if (specialKeyIndex < JAVA_KEYS.length) {
             return SQUEAK_KEYS[specialKeyIndex];
+        }
 
-        if (evt.isAltDown())
+        if (evt.isAltDown()) {
             return Character.toLowerCase((char) evt.getKeyCode());
+        }
 
         return KeyEvent.CHAR_UNDEFINED;
     }

@@ -127,8 +127,9 @@ public class BitBlt {
             return false;
         }
 
-        if (combinationRule >= 16 && combinationRule <= 17)
+        if (combinationRule >= 16 && combinationRule <= 17) {
             return false;
+        }
         destForm = bbPointers[0];
         sourceForm = bbPointers[1];
         halftoneForm = bbPointers[2];
@@ -136,38 +137,50 @@ public class BitBlt {
         noSource = ignoreSourceOrHalftone(sourceForm);
         noHalftone = ignoreSourceOrHalftone(halftoneForm);
 
-        if (!dest.loadFrom(destForm))
+        if (!dest.loadFrom(destForm)) {
             return false;
-        if (!loadBBDestRect(bbPointers))
+        }
+        if (!loadBBDestRect(bbPointers)) {
             return false;
-        if (!SqueakVM.INSTANCE.isSuccess())
+        }
+        if (!SqueakVM.INSTANCE.isSuccess()) {
             return false;
+        }
         if (noSource) {
             sourceX = sourceY = 0;
         } else {
-            if (!source.loadFrom(sourceForm))
+            if (!source.loadFrom(sourceForm)) {
                 return false;
-            if (!loadColorMap(bbObject))
+            }
+            if (!loadColorMap(bbObject)) {
                 return false;
-            if ((cmFlags & 8) == 0)
+            }
+            if ((cmFlags & 8) == 0) {
                 setUpColorMasks();
+            }
             sourceX = checkIntOrFloatIfNil(bbPointers[8], 0);
             sourceY = checkIntOrFloatIfNil(bbPointers[9], 0);
         }
-        if (!loadBBHalftoneForm(halftoneForm))
+        if (!loadBBHalftoneForm(halftoneForm)) {
             return false;
-        if (!loadBBClipRect(bbPointers))
+        }
+        if (!loadBBClipRect(bbPointers)) {
             return false;
-        if (!SqueakVM.INSTANCE.isSuccess())
+        }
+        if (!SqueakVM.INSTANCE.isSuccess()) {
             return false;
+        }
         if (combinationRule == 30 || combinationRule == 31) {
-            if (argCount != 1)
+            if (argCount != 1) {
                 return false; // alpha arg is required
+            }
             sourceAlpha = checkIntValue(vm.top());
-            if (!(sourceAlpha >= 0 && sourceAlpha <= 255))
+            if (!(sourceAlpha >= 0 && sourceAlpha <= 255)) {
                 return false;
-            if (SqueakVM.INSTANCE.isSuccess())
+            }
+            if (SqueakVM.INSTANCE.isSuccess()) {
                 vm.pop();
+            }
         }
         // Intersect incoming clipRect with destForm bounds
         if (clipX < 0) {
@@ -189,16 +202,21 @@ public class BitBlt {
     }
 
     boolean ignoreSourceOrHalftone(Object formPointer) {
-        if (formPointer == vm.nilObj)
+        if (formPointer == vm.nilObj) {
             return true;
-        if (combinationRule == 0)
+        }
+        if (combinationRule == 0) {
             return true;
-        if (combinationRule == 5)
+        }
+        if (combinationRule == 5) {
             return true;
-        if (combinationRule == 10)
+        }
+        if (combinationRule == 10) {
             return true;
-        if (combinationRule == 15)
+        }
+        if (combinationRule == 15) {
             return true;
+        }
         return false;
     }
 
@@ -212,10 +230,12 @@ public class BitBlt {
 
     int checkIntOrFloatIfNil(Object intOrFloatObj, int valueIfNil) {
         double floatValue;
-        if (SqueakVM.isSmallInt(intOrFloatObj))
+        if (SqueakVM.isSmallInt(intOrFloatObj)) {
             return SqueakVM.intFromSmall(((Integer) intOrFloatObj));
-        if (intOrFloatObj == vm.nilObj)
+        }
+        if (intOrFloatObj == vm.nilObj) {
             return valueIfNil;
+        }
         SqueakObject floatObj = (SqueakObject) intOrFloatObj;
         if (floatObj.sqClass != vm.specialObjects[Squeak.splOb_ClassFloat]) {
             SqueakVM.INSTANCE.setSuccess(false);
@@ -234,8 +254,9 @@ public class BitBlt {
         if (noHalftone) {
             return true;
         }
-        if (SqueakVM.isSmallInt(aForm))
+        if (SqueakVM.isSmallInt(aForm)) {
             return false;
+        }
 
         // retrofit code style, refer to SqueakJS and Squeak itself
         // FIXME by using retrofit code, when close mini-image's start window, will crash
@@ -325,8 +346,9 @@ public class BitBlt {
             bbW = width - (clipX - destX);
             dx = clipX;
         }
-        if ((dx + bbW) > (clipX + clipWidth))
+        if ((dx + bbW) > (clipX + clipWidth)) {
             bbW -= (dx + bbW) - (clipX + clipWidth);
+        }
         if (destY >= clipY) {
             sy = sourceY;
             dy = destY;
@@ -336,30 +358,36 @@ public class BitBlt {
             bbH = height - (clipY - destY);
             dy = clipY;
         }
-        if ((dy + bbH) > (clipY + clipHeight))
+        if ((dy + bbH) > (clipY + clipHeight)) {
             bbH -= (dy + bbH) - (clipY + clipHeight);
-        if (noSource)
+        }
+        if (noSource) {
             return;
+        }
         if (sx < 0) {
             dx -= sx;
             bbW += sx;
             sx = 0;
         }
-        if ((sx + bbW) > source.width)
+        if ((sx + bbW) > source.width) {
             bbW -= (sx + bbW) - source.width;
+        }
         if (sy < 0) {
             dy -= sy;
             bbH += sy;
             sy = 0;
         }
-        if ((sy + bbH) > source.height)
+        if ((sy + bbH) > source.height) {
             bbH -= (sy + bbH) - source.height;
+        }
     }
 
     Rectangle copyBits() {
         // combines copyBits, copybitsLockedAndClipped, and performcopyLoop
         clipRange();
-        if (bbW <= 0 || bbH <= 0) return null;
+        if (bbW <= 0 || bbH <= 0) {
+            return null;
+        }
         destMaskAndPointerInit();
         bitCount = 0;
         /* Choose and perform the actual copy loop. */
@@ -374,10 +402,12 @@ public class BitBlt {
                 copyLoop();
             }
         }
-        if (!destIsDisplay)
+        if (!destIsDisplay) {
             return null;
-        if ((combinationRule == 22) || (combinationRule == 32))
+        }
+        if ((combinationRule == 22) || (combinationRule == 32)) {
             return null;
+        }
         if (hDir > 0) {
             affectedL = dx;
             affectedR = dx + bbW;
@@ -463,16 +493,18 @@ public class BitBlt {
         skew = (source.msb) ? (sxLowBits - dxLowBits) * dest.depth
                 : (dxLowBits - sxLowBits) * dest.depth;
         if (preload) {
-            if (skew < 0)
+            if (skew < 0) {
                 skew += 32;
-            else
+            } else {
                 skew -= 32;
+            }
         }
         /* calculate increments from end of one line to start of next */
         sourceIndex = (sy * source.pitch) + (sx / (32 / source.depth));
         sourceDelta = (source.pitch * vDir) - (nWords * hDir);
-        if (preload)
+        if (preload) {
             sourceDelta -= hDir;
+        }
     }
 
     int halftoneAt(int index) {
@@ -508,8 +540,9 @@ public class BitBlt {
         halftoneWord = AllOnes;
         for (i = 1; i <= bbH; i += 1) {
             // vertical loop
-            if (!noHalftone)
+            if (!noHalftone) {
                 halftoneWord = halftoneAt((dy + i) - 1);
+            }
             destMask = mask1; // First word in row is masked
             destWord = dstLongAt(destIndex);
             mergeWord = mergeFnwith(halftoneWord, destWord);
@@ -735,8 +768,9 @@ public class BitBlt {
         sourceDelta = source.pitch - nSourceIncs;
         startBits = dest.pixPerWord - (dx & (dest.pixPerWord - 1));
         endBits = (((dx + bbW) - 1) & (dest.pixPerWord - 1)) + 1;
-        if (bbW < startBits)
+        if (bbW < startBits) {
             startBits = bbW;
+        }
         srcShift = (sx & (source.pixPerWord - 1)) * source.depth;
         dstShift = (dx & (dest.pixPerWord - 1)) * dest.depth;
         srcShiftInc = source.depth;

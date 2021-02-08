@@ -191,8 +191,9 @@ public class Screen {
     public void close() {
         fFrame.setVisible(false);
         fFrame.dispose();
-        if (WITH_HEARTBEAT)
+        if (WITH_HEARTBEAT) {
             fHeartBeat.stop();
+        }
     }
 
     public void redisplay(boolean immediately, Rectangle area) {

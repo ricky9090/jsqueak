@@ -20,10 +20,12 @@ class MouseStatus extends MouseInputAdapter {
     private int mapButton(MouseEvent evt) {
         switch (evt.getButton()) {
             case MouseEvent.BUTTON1:
-                if (evt.isControlDown())
+                if (evt.isControlDown()) {
                     return YELLOW;
-                if (evt.isAltDown())
+                }
+                if (evt.isAltDown()) {
                     return BLUE;
+                }
                 return RED;
             case MouseEvent.BUTTON2:
                 return BLUE;        // middle (frame menu)
