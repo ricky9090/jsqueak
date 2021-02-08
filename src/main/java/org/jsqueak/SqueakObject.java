@@ -64,7 +64,8 @@ public class SqueakObject {
         //Creation of objects from Squeak
         this(img);
         sqClass = cls;
-        int instSpec = SqueakVM.intFromSmall(cls.getPointerI(Squeak.Class_format));
+        //int instSpec = SqueakVM.intFromSmall(cls.getPointerI(Squeak.Class_format));
+        int instSpec = cls.getPointerI(Squeak.Class_format);
         int instSize = ((instSpec >> 1) & 0x3F) + ((instSpec >> 10) & 0xC0) - 1; //0-255
         format = ((short) ((instSpec >> 7) & 0xF)); //This is the 0-15 code
 

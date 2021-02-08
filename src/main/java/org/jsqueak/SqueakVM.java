@@ -265,6 +265,14 @@ public class SqueakVM {
         return smallInt.intValue();
     }
 
+    // FIXME
+    public boolean isSmallFloat(Object obj) {
+        if (isSmallInt(obj)) {
+            return false;
+        }
+        return ((SqueakObject) obj).getSqClass() == specialObjects[Squeak.splOb_ClassFloat];
+    }
+
     // MEMORY ACCESS:
     public SqueakObject getClass(Object obj) {
         if (isSmallInt(obj))
@@ -995,17 +1003,19 @@ public class SqueakVM {
 
     public boolean pushBoolAndPeek(boolean boolResult) {
         //Peek ahead to see if next bytecode is a conditional jump
-        if (!success)
+        if (!success) {
             return false;
+        }
         int originalPC = pc;
         int nextByte = nextByte();
         if (nextByte >= 152 && nextByte < 160) {
             // It's a BFP
             popN(2);
-            if (boolResult)
+            if (boolResult) {
                 return true;
-            else
+            } else {
                 pc += (nextByte - 152 + 1);
+            }
             return true;
         }
         if (nextByte == 172) {
@@ -1013,10 +1023,11 @@ public class SqueakVM {
             // Could check for all long cond jumps later
             popN(2);
             nextByte = nextByte();
-            if (boolResult)
+            if (boolResult) {
                 return true;
-            else
+            } else {
                 pc += nextByte;
+            }
             return true;
         }
         popNandPush(2, boolResult ? trueObj : falseObj);
@@ -1049,13 +1060,15 @@ public class SqueakVM {
     }
 
     public static int safeMultiply(int multiplicand, int multiplier) {
+        // FIXME
         int product = multiplier * multiplicand;
+        return product;
         //check for overflow by seeing if computation is reversible
-        if (multiplier == 0)
+        /*if (multiplier == 0)
             return product;
         if ((product / multiplier) == multiplicand)
             return product;
-        return nonSmallInt;   //non-small result will cause failure
+        return nonSmallInt;   //non-small result will cause failure*/
     }
 
     public static int safeShift(int bitsToShift, int shiftCount) {
@@ -1235,6 +1248,9 @@ public class SqueakVM {
         } else {
             int spBefore = sp;
             boolean success = primHandler.doPrimitive(primIndex, argCount);
+            /*if (!success && primIndex != 19) {
+                SqueakLogger.log_D("primitive failed at index: " + primIndex);
+            }*/
 //            if (success) {
 //                if (primIndex>=81 && primIndex<=88) return success; // context switches and perform
 //                if (primIndex>=43 && primIndex<=48) return success; // boolean peeks
