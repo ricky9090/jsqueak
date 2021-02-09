@@ -273,12 +273,20 @@ public class SqueakObject {
             //Format 6 word objects are already OK (except Floats...)
             else if (sqClass == floatClass) {
                 //Floats need two ints to be converted to double
-                long longBits = (((long) ((int[]) bits)[0]) << 32) | (((long) ((int[]) bits)[0]) & 0xFFFFFFFF);
-                //System.err.println();
-                //System.err.println(((int[])bits)[0] + " " + ((int[])bits)[1] + " -> " + longBits);
+                /*
+                 FIXME
+                  longBitsToDouble may fail according to IEEE 754,
+                  Because currently, some integer in bits[] is negative,
+                  the resulting longbit will out of range.
+                  Force it & 0x7FFFFFFF to remove negative flag
+                  Have to find out the reason.
+                 */
+                int a1 = ((int[]) bits)[0] & 0x7FFFFFFF;
+                int a2 = ((int[]) bits)[1] & 0x7FFFFFFF;
+                long longBits = (((long) a1) << 32) | (a2 & 0xFFFFFFFF);
+
                 bits = new Double(Double.longBitsToDouble(longBits));
             }
-            //System.err.println((Double)bits + " " + Double.doubleToRawLongBits(((Double)bits).doubleValue()));
         }
     }
 
@@ -328,11 +336,15 @@ public class SqueakObject {
                 return new String((byte[]) bits);
             }
         } else {
-            SqueakObject itsClass = this.getSqClass();
-            if (itsClass.pointersSize() >= 9) {
-                return "a " + itsClass.classGetName().asString();
+            if (this.sqClass instanceof SqueakObject) {
+                SqueakObject itsClass = this.getSqClass();
+                if (itsClass.pointersSize() >= 9) {
+                    return "a " + itsClass.classGetName().asString();
+                } else {
+                    return "Class " + this.classGetName().asString();
+                }
             } else {
-                return "Class " + this.classGetName().asString();
+                return " find problem with this obj";
             }
         }
     }

@@ -350,10 +350,15 @@ public class SqueakImage {
         System.out.println("Start installs at " + System.currentTimeMillis());
         for (int i = 0; i < otMaxUsed; i++) {
             // Don't need oldBaseAddr here**
+            if (i == 7635) {
+                // TODO change index to watch Object installing in debug mode
+                int temp = 0;  // foobar statement
+            }
             ((SqueakObject) objectTable[i].get()).install(oopMap, ccArray, floatClass);
         }
 
         System.out.println("Done installing at " + System.currentTimeMillis());
+        dumpObjOfImage();
         //Proper version of spl objs -- it's a good object
         specialObjectsArray = (SqueakObject) (oopMap.get(new Integer(specialObjectsOopInt)));
         otMaxOld = otMaxUsed;
@@ -374,7 +379,8 @@ public class SqueakImage {
         int outgoing = 0;
         for (int i = 0; i < 4; i++) {
             int lowByte = incoming & 255;
-            outgoing = (outgoing << 8) + lowByte;
+            // FIXME use bit op instead of add lowByte
+            outgoing = (outgoing << 8) | lowByte;
             incoming = incoming >> 8;
         }
         return outgoing;
@@ -389,5 +395,48 @@ public class SqueakImage {
             ccArray[i] = new Integer(compactClassesArray.oldOopAt(i));
         }
         return ccArray;
+    }
+
+    /**
+     * Dump all Object of Image File
+     */
+    private void dumpObjOfImage() {
+        for (int i = 0; i < objectTable.length; i++) {
+            WeakReference<Object> objectWeakReference = objectTable[i];
+            if (objectWeakReference != null && objectWeakReference.get() != null) {
+
+                Object real = objectWeakReference.get();
+
+                if ("a Point".equals(real.toString())) {
+                    // dump a Point
+                    SqueakObject point = (SqueakObject) real;
+                    SqueakLogger.log_D("[" + i + "] create Point: " + point.pointers[0] + "@" + point.pointers[1]);
+                } else if ("a Rectangle".equals(real.toString())) {
+                    // dump a Rectangle
+                    SqueakObject rectangle = (SqueakObject) real;
+                    SqueakObject point1 = (SqueakObject) rectangle.pointers[0];
+                    SqueakObject point2 = (SqueakObject) rectangle.pointers[1];
+                    if ("a Float".equals(point1.pointers[0].toString()) ) {
+                        SqueakLogger.log_D("[" + i + "] create rectangle: "
+                                + ((SqueakObject)point1.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point1.pointers[1]).bits.toString()
+                                + " => "
+                                + ((SqueakObject)point2.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point1.pointers[1]).bits.toString());
+                    } else {
+                        SqueakLogger.log_D("[" + i + "] create rectangle: "
+                                + point1.pointers[0] +  "@" + point1.pointers[1]
+                                + " => "
+                                + point2.pointers[0] +  "@" + point2.pointers[1]);
+                    }
+
+                } else if ("a Float".equals(real.toString())) {
+                    // dump a Float
+                    SqueakObject aFloat = (SqueakObject) real;
+                    SqueakLogger.log_D("[" + i + "] create float: " + aFloat.bits.toString());
+                } else {
+                    // we don't care about other object
+                    SqueakLogger.log_D("[" + i + "] create obj: " + real.toString());
+                }
+            }
+        }
     }
 }
