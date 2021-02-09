@@ -23,16 +23,12 @@ THE SOFTWARE.
 
 package org.jsqueak;
 
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-
-import static java.lang.System.exit;
 
 /**
  * @author Daniel Ingalls
@@ -178,9 +174,9 @@ class SqueakPrimitiveHandler {
         }
     }
 
-    private static boolean primitiveEq(Object arg1, Object arg2) {
+    private boolean primitiveEq(Object arg1, Object arg2) {
         // == must work for uninterned small ints
-        if (SqueakVM.isSmallInt(arg1) && SqueakVM.isSmallInt(arg2)) {
+        if (vm.isSTInteger(arg1) && vm.isSTInteger(arg2)) {
             return ((Integer) arg1).intValue() == ((Integer) arg2).intValue();
         }
         return arg1 == arg2;
@@ -543,7 +539,7 @@ class SqueakPrimitiveHandler {
      * If maybeSmall is a small integer, return its value, fail otherwise.
      */
     private int checkSmallInt(Object maybeSmall) {
-        if (SqueakVM.isSmallInt(maybeSmall)) {
+        if (vm.isSTInteger(maybeSmall)) {
             return (Integer) maybeSmall;
         }
 
@@ -564,7 +560,7 @@ class SqueakPrimitiveHandler {
         }
 
         // FIXME is it ok to treat integer as float ? see SqueakJS <checkFloat> at vm.primitives.js
-        if (SqueakVM.isSmallInt(maybeFloat)) {
+        if (vm.isSTInteger(maybeFloat)) {
             return ((Integer) maybeFloat).doubleValue();
         }
 
@@ -590,7 +586,7 @@ class SqueakPrimitiveHandler {
     private SqueakObject checkNonSmallInt(Object maybeSmall) {
         // returns a SqObj and sets success
 
-        if (SqueakVM.isSmallInt(maybeSmall)) {
+        if (vm.isSTInteger(maybeSmall)) {
             this.success = false;
             return vm.nilObj;
         }
@@ -600,8 +596,8 @@ class SqueakPrimitiveHandler {
 
     int stackPos32BitValue(int nDeep) {
         Object stackVal = vm.stackValue(nDeep);
-        if (SqueakVM.isSmallInt(stackVal)) {
-            int value = SqueakVM.intFromSmall(((Integer) stackVal));
+        if (vm.isSTInteger(stackVal)) {
+            int value = (Integer) stackVal;
             if (value >= 0) {
                 return value;
             }
@@ -709,7 +705,7 @@ class SqueakPrimitiveHandler {
     boolean primitiveMakePoint() {
         Object x = vm.stackValue(1);
         Object y = vm.stackValue(0);
-        if (!vm.is_STInteger(x) || !vm.is_STInteger(y)) {
+        if (!vm.isSTInteger(x) || !vm.isSTInteger(y)) {
             success = false;
             return false;
         }
@@ -901,7 +897,7 @@ class SqueakPrimitiveHandler {
         // bytes...
         if (info.convertChars) {
             // put a character...
-            if (SqueakVM.isSmallInt(objToPut)) {
+            if (vm.isSTInteger(objToPut)) {
                 this.success = false;
                 return objToPut;
             }
@@ -913,20 +909,20 @@ class SqueakPrimitiveHandler {
             }
 
             Object asciiToPut = sqObjToPut.getPointer(0);
-            if (!(SqueakVM.isSmallInt(asciiToPut))) {
+            if (!(vm.isSTInteger(asciiToPut))) {
                 this.success = false;
                 return objToPut;
             }
 
-            intToPut = SqueakVM.intFromSmall(((Integer) asciiToPut));
+            intToPut = (Integer) asciiToPut;
         } else {
             // put a byte...
-            if (!(SqueakVM.isSmallInt(objToPut))) {
+            if (!(vm.isSTInteger(objToPut))) {
                 this.success = false;
                 return objToPut;
             }
 
-            intToPut = SqueakVM.intFromSmall(((Integer) objToPut));
+            intToPut = (Integer) objToPut;
         }
         if (intToPut < 0 || intToPut > 255) {
             this.success = false;
@@ -951,7 +947,7 @@ class SqueakPrimitiveHandler {
 
     // FIXME: is this the same as SqueakObject.instSize() ?
     private int indexableSize(Object obj) {
-        if (SqueakVM.isSmallInt(obj)) {
+        if (vm.isSTInteger(obj)) {
             return -1; // -1 means not indexable
         }
         SqueakObject sqObj = (SqueakObject) obj;
@@ -1049,7 +1045,7 @@ class SqueakPrimitiveHandler {
             return false;
         }
         Object array = streamBody[Squeak.Stream_array];
-        if (SqueakVM.isSmallInt(array)) {
+        if (vm.isSTInteger(array)) {
             return false;
         }
         int index = checkSmallInt(streamBody[Squeak.Stream_position]);
@@ -1074,12 +1070,12 @@ class SqueakPrimitiveHandler {
 
     private SqueakObject primitiveBlockCopy() {
         Object rcvr = vm.stackValue(1);
-        if (SqueakVM.isSmallInt(rcvr)) {
+        if (vm.isSTInteger(rcvr)) {
             this.success = false;
         }
 
         Object sqArgCount = vm.top();
-        if (!(SqueakVM.isSmallInt(sqArgCount))) {
+        if (!(vm.isSTInteger(sqArgCount))) {
             this.success = false;
         }
 
@@ -1091,7 +1087,7 @@ class SqueakPrimitiveHandler {
             return vm.nilObj;
         }
 
-        if (SqueakVM.isSmallInt(homeCtxt.getPointer(Squeak.Context_method))) {
+        if (vm.isSTInteger(homeCtxt.getPointer(Squeak.Context_method))) {
             // ctxt is itself a block; get the context for its enclosing method
             homeCtxt = homeCtxt.getPointerNI(Squeak.BlockContext_home);
         }
@@ -1114,7 +1110,7 @@ class SqueakPrimitiveHandler {
         }
         SqueakObject block = (SqueakObject) rcvr;
         Object blockArgCount = block.getPointer(Squeak.BlockContext_argumentCount);
-        if (!SqueakVM.isSmallInt(blockArgCount)) {
+        if (!vm.isSTInteger(blockArgCount)) {
             return false;
         }
         if ((((Integer) blockArgCount).intValue() != argCount)) {
@@ -1135,7 +1131,7 @@ class SqueakPrimitiveHandler {
 
     private Object primitiveHash() {
         Object rcvr = vm.top();
-        if (SqueakVM.isSmallInt(rcvr)) {
+        if (vm.isSTInteger(rcvr)) {
             this.success = false;
             return vm.nilObj;
         }

@@ -221,8 +221,8 @@ public class BitBlt {
     }
 
     int checkIntValue(Object obj) {
-        if (SqueakVM.isSmallInt(obj)) {
-            return SqueakVM.intFromSmall(((Integer) obj));
+        if (vm.isSTInteger(obj)) {
+            return (Integer) obj;
         }
         SqueakVM.INSTANCE.setSuccess(false);
         return 0;
@@ -230,8 +230,8 @@ public class BitBlt {
 
     int checkIntOrFloatIfNil(Object intOrFloatObj, int valueIfNil) {
         double floatValue;
-        if (SqueakVM.isSmallInt(intOrFloatObj)) {
-            return SqueakVM.intFromSmall(((Integer) intOrFloatObj));
+        if (vm.isSTInteger(intOrFloatObj)) {
+            return (Integer) intOrFloatObj;
         }
         if (intOrFloatObj == vm.nilObj) {
             return valueIfNil;
@@ -254,7 +254,7 @@ public class BitBlt {
         if (noHalftone) {
             return true;
         }
-        if (SqueakVM.isSmallInt(aForm)) {
+        if (vm.isSTInteger(aForm)) {
             return false;
         }
 

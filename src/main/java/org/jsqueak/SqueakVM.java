@@ -198,7 +198,7 @@ public class SqueakVM {
 
     public void fetchContextRegisters(SqueakObject ctxt) {
         Object meth = ctxt.getPointer(Squeak.Context_method);
-        if (isSmallInt(meth)) {
+        if (isSTInteger(meth)) {
             //if the Method field is an integer, activeCntx is a block context
             homeContext = (SqueakObject) ctxt.getPointer(Squeak.BlockContext_home);
             meth = homeContext.getPointerNI(Squeak.Context_method);
@@ -232,7 +232,7 @@ public class SqueakVM {
     }
 
     public int decodeSqueakPC(Integer squeakPC, SqueakObject aMethod) {
-        return intFromSmall(squeakPC) - (((aMethod.methodNumLits() + 1) * 4) + 1 + 1);
+        return squeakPC - (((aMethod.methodNumLits() + 1) * 4) + 1 + 1);
     }
 
     public Integer encodeSqueakSP(int intSP) {
@@ -241,37 +241,41 @@ public class SqueakVM {
     }
 
     public int decodeSqueakSP(Integer squeakPC) {
-        return intFromSmall(squeakPC) + (Squeak.Context_tempFrameStart - 1);
+        return squeakPC + (Squeak.Context_tempFrameStart - 1);
     }
 
     //SmallIntegers are stored as Java (boxed)Integers
-    public static boolean canBeSmallInt(int anInt) {
+    public static boolean canBeSTInteger(int anInt) {
         return (anInt >= minSmallInt) && (anInt <= maxSmallInt);
     }
 
     public static Integer smallFromInt(int raw) {
-        if (raw >= minCachedInt && raw <= maxCachedInt)
+        if (raw >= minCachedInt && raw <= maxCachedInt) {
             return cachedInts[raw - minCachedInt];
-        if (raw >= minSmallInt && raw <= maxSmallInt)
-            return new Integer(raw);
+        }
+        if (raw >= minSmallInt && raw <= maxSmallInt) {
+            return raw;
+        }
         return null;
     }
 
+    /*@Deprecated
     public static boolean isSmallInt(Object obj) {
         return obj instanceof Integer;
-    }
+    }*/
 
+    /*@Deprecated
     public static int intFromSmall(Integer smallInt) {
+        //  Unnecessary unboxing
         return smallInt.intValue();
-    }
+    }*/
 
-    public boolean is_STInteger(Object obj) {
+    public boolean isSTInteger(Object obj) {
         return obj instanceof Integer;
     }
 
-    // FIXME
-    public boolean is_STFloat(Object obj) {
-        if (isSmallInt(obj)) {
+    public boolean isSTFloat(Object obj) {
+        if (isSTInteger(obj)) {
             return false;
         }
         return ((SqueakObject) obj).getSqClass() == specialObjects[Squeak.splOb_ClassFloat];
@@ -279,7 +283,7 @@ public class SqueakVM {
 
     // MEMORY ACCESS:
     public SqueakObject getClass(Object obj) {
-        if (isSmallInt(obj))
+        if (isSTInteger(obj))
             return getSpecialObject(Squeak.splOb_ClassInteger);
         return ((SqueakObject) obj).getSqClass();
     }
@@ -1353,7 +1357,7 @@ public class SqueakVM {
     public boolean primitivePerformWithArgs(SqueakObject lookupClass) {
         Object rcvr = stackValue(2);
         SqueakObject selector = (SqueakObject) stackValue(1);
-        if (isSmallInt(stackValue(0))) {
+        if (isSTInteger(stackValue(0))) {
             return false;
         }
         SqueakObject args = (SqueakObject) stackValue(0);
@@ -1538,7 +1542,7 @@ public class SqueakVM {
         if (obj == null) {
             return "null";
         }
-        if (isSmallInt(obj)) {
+        if (isSTInteger(obj)) {
             return "=" + ((Integer) obj).intValue();
         } else {
             return ((SqueakObject) obj).asString();
@@ -1584,7 +1588,7 @@ public class SqueakVM {
                 return true;
             }
             squeakForm = null; //Marks this as failed until very end...
-            if (isSmallInt(aForm)) {
+            if (isSTInteger(aForm)) {
                 return false;
             }
             Object[] formPointers = ((SqueakObject) aForm).pointers;
@@ -1592,18 +1596,18 @@ public class SqueakVM {
                 return false;
             }
             for (int i = 1; i < 4; i++) {
-                if (!isSmallInt(formPointers[i])) {
+                if (!isSTInteger(formPointers[i])) {
                     return false;
                 }
             }
             Object bitsObject = formPointers[0];
-            width = intFromSmall(((Integer) formPointers[1]));
-            height = intFromSmall(((Integer) formPointers[2]));
-            depth = intFromSmall(((Integer) formPointers[3]));
+            width = (Integer) formPointers[1];
+            height = (Integer) formPointers[2];
+            depth = (Integer) formPointers[3];
             if ((width < 0) || (height < 0)) {
                 return false;
             }
-            if (bitsObject == nilObj || isSmallInt(bitsObject)) {
+            if (bitsObject == nilObj || isSTInteger(bitsObject)) {
                 return false;
             }
             msb = depth > 0;

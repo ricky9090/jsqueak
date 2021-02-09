@@ -153,7 +153,7 @@ public class SqueakObject {
     }
 
     public int classInstSize() {
-        int instSpec = SqueakVM.intFromSmall(this.getPointerI(Squeak.Class_format));
+        int instSpec = this.getPointerI(Squeak.Class_format);
         return ((instSpec >> 1) & 0x3F) + ((instSpec >> 10) & 0xC0) - 1; //0-255
     }
 
