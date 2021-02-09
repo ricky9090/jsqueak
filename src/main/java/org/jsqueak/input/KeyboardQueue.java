@@ -1,4 +1,7 @@
-package org.jsqueak;
+package org.jsqueak.input;
+
+import org.jsqueak.SqueakLogger;
+import org.jsqueak.SqueakVM;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -9,7 +12,7 @@ import java.util.List;
  * I'm JSqueak's keyboard driver.  I convert Java KeyEvents into Squeak
  * key and modifier key press events.
  */
-class KeyboardQueue implements KeyListener {
+public class KeyboardQueue implements KeyListener {
     /**
      * The size of the character queue.
      */
@@ -72,14 +75,14 @@ class KeyboardQueue implements KeyListener {
 
     private int fModifierKeys = 0;
 
-    private InputDispatchThread inputDispatch;
+    private KeyboardDispatchThread keyboardDispatchThread;
 
     private final Object lockObj = new Object();
 
-    KeyboardQueue(SqueakVM squeakVM) {
+    public KeyboardQueue(SqueakVM squeakVM) {
         fSqueakVM = squeakVM;
-        inputDispatch = new InputDispatchThread();
-        inputDispatch.start();
+        keyboardDispatchThread = new KeyboardDispatchThread(squeakVM);
+        keyboardDispatchThread.start();
     }
 
     // region JSqueak interface
@@ -104,7 +107,7 @@ class KeyboardQueue implements KeyListener {
         }
     }
 
-    int modifierKeys() {
+    public int modifierKeys() {
         return fModifierKeys;
     }
 
@@ -187,23 +190,6 @@ class KeyboardQueue implements KeyListener {
     // endregion
 
     public void stopDispatching() {
-        inputDispatch.setDispating(false);
-    }
-
-    class InputDispatchThread extends Thread {
-
-        boolean dispating = true;
-
-        @Override
-        public void run() {
-            while (dispating) {
-                fSqueakVM.wakeVMFromKeyboardThread();
-            }
-            SqueakLogger.log_D("quit input dispatch thread");
-        }
-
-        public void setDispating(boolean dispating) {
-            this.dispating = dispating;
-        }
+        keyboardDispatchThread.setDispating(false);
     }
 }

@@ -259,7 +259,6 @@ public class BitBlt {
         }
 
         // retrofit code style, refer to SqueakJS and Squeak itself
-        // FIXME by using retrofit code, when close mini-image's start window, will crash
         SqueakObject bitsObject;
         if (InterpreterProxy.isPointers(aForm) && InterpreterProxy.SIZEOF(aForm) >= 4) {
             // Old-style 32xN monochrome halftone Forms

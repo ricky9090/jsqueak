@@ -1633,7 +1633,7 @@ public class SqueakVM {
      * Mouse input thread will wake VM only when event is triggered<br>
      * since MouseEvent is a high frequency event
      */
-    void wakeVMFromMouseThread() {
+    public void wakeVMFromMouseThread() {
         screenEvent = true;
         synchronized (this) {
             notify();
@@ -1653,7 +1653,7 @@ public class SqueakVM {
      * since keyboard input is a low frequency event<br>
      * keep notifying can reduce lag
      */
-    void wakeVMFromKeyboardThread() {
+    public void wakeVMFromKeyboardThread() {
         screenEvent = true;
         synchronized (this) {
             notify();

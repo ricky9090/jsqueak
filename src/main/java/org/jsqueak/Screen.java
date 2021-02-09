@@ -32,6 +32,9 @@ THE SOFTWARE.
 package org.jsqueak;
 
 
+import org.jsqueak.input.KeyboardQueue;
+import org.jsqueak.input.MouseStatus;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
