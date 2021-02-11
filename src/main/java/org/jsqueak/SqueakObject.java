@@ -269,23 +269,27 @@ public class SqueakObject {
             } else if (format >= 8) {
                 //Formats 8..11 -- ByteArrays (and Strings)
                 bits = decodeBytes(nWords, ((int[]) bits), 0, format & 3);
-            }
-            //Format 6 word objects are already OK (except Floats...)
-            else if (sqClass == floatClass) {
+            } else if (sqClass == floatClass) { //Format 6 word objects are already OK (except Floats...)
                 //Floats need two ints to be converted to double
                 /*
-                 FIXME
-                  longBitsToDouble may fail according to IEEE 754,
-                  Because currently, some integer in bits[] is negative,
-                  the resulting longbit will out of range.
-                  Force it & 0x7FFFFFFF to remove negative flag
-                  Have to find out the reason.
+                Caution !
+                Some integer value are negative, because int,long are signed value in Java,
+                so cast a int to long directly will cause error when calling Double.longBitsToDouble.
+                When dealing with lower bits, we must do << 32 then >>> 32,
+                using >>> operator to ignore negative flag.
+                Example :
+                1. lower bit: (int) bits[1] = 0xFFC0 0000
+                2. cast to long: 0xFFFF FFFF FFC0 0000 (a negative number)
+                3. << 32: 0xFFC0 0000 0000 0000
+                4. >>> 32: 0x0000 0000 FFC0 0000  (if >> 32: 0xFFFF FFFF FFC0 0000, still negative)
                  */
-                int a1 = ((int[]) bits)[0] & 0x7FFFFFFF;
-                int a2 = ((int[]) bits)[1] & 0x7FFFFFFF;
-                long longBits = (((long) a1) << 32) | (a2 & 0xFFFFFFFF);
+                int a1 = ((int[]) bits)[0];
+                int a2 = ((int[]) bits)[1];
+                long b1 = ((long) a1) << 32;
+                long b2 = ((long) a2 << 32) >>> 32; // import !!! use '>>>' to ignore negative flag
+                long longBits = b1 | b2;
 
-                bits = new Double(Double.longBitsToDouble(longBits));
+                bits = Double.longBitsToDouble(longBits);
             }
         }
     }

@@ -350,7 +350,7 @@ public class SqueakImage {
         System.out.println("Start installs at " + System.currentTimeMillis());
         for (int i = 0; i < otMaxUsed; i++) {
             // Don't need oldBaseAddr here**
-            if (i == 7635) {
+            if (i == 4715) {
                 // TODO change index to watch Object installing in debug mode
                 int temp = 0;  // foobar statement
             }
@@ -410,13 +410,18 @@ public class SqueakImage {
                 if ("a Point".equals(real.toString())) {
                     // dump a Point
                     SqueakObject point = (SqueakObject) real;
-                    SqueakLogger.log_D("[" + i + "] create Point: " + point.pointers[0] + "@" + point.pointers[1]);
+                    if ("a Float".equals(point.pointers[0].toString())) {
+                        SqueakLogger.log_D("[" + i + "] create Point: "
+                                + ((SqueakObject)point.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point.pointers[1]).bits.toString());
+                    } else {
+                        SqueakLogger.log_D("[" + i + "] create Point: " + point.pointers[0] + "@" + point.pointers[1]);
+                    }
                 } else if ("a Rectangle".equals(real.toString())) {
                     // dump a Rectangle
                     SqueakObject rectangle = (SqueakObject) real;
                     SqueakObject point1 = (SqueakObject) rectangle.pointers[0];
                     SqueakObject point2 = (SqueakObject) rectangle.pointers[1];
-                    if ("a Float".equals(point1.pointers[0].toString()) ) {
+                    if ("a Float".equals(point1.pointers[0].toString())) {
                         SqueakLogger.log_D("[" + i + "] create rectangle: "
                                 + ((SqueakObject)point1.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point1.pointers[1]).bits.toString()
                                 + " => "
