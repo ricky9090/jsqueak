@@ -59,7 +59,7 @@ public class SqueakVM {
     SqueakObject verifyAtSelector;
     SqueakObject verifyAtClass;
 
-    boolean screenEvent = false;
+    private boolean screenEvent = false;
 
     int lowSpaceThreshold;
     private int interruptCheckCounter;
@@ -1629,49 +1629,19 @@ public class SqueakVM {
         }
     }
 
-    /**
-     * Mouse input thread will wake VM only when event is triggered<br>
-     * since MouseEvent is a high frequency event
-     */
-    public void wakeVMFromMouseThread() {
-        screenEvent = true;
-        synchronized (this) {
-            notify();
-        }
-        try {
-            //System.out.println("mouse thread " + Thread.currentThread());
-            Thread.sleep(16);
-        } catch (InterruptedException e) {
-        }
-
-        screenEvent = false;
-    }
-
-    /**
-     * Keyboard input thread will wake vm in a while loop<br>
-     * at frequency of 60 times/second<br>
-     * since keyboard input is a low frequency event<br>
-     * keep notifying can reduce lag
-     */
-    public void wakeVMFromKeyboardThread() {
-        screenEvent = true;
-        synchronized (this) {
-            notify();
-        }
-        try {
-            //System.out.println("keyboard thread " + Thread.currentThread());
-            Thread.sleep(16);
-        } catch (InterruptedException e) {
-        }
-
-        screenEvent = false;
-    }
-
     public void setSuccess(boolean suc) {
         this.success = suc;
     }
 
     public boolean isSuccess() {
         return this.success;
+    }
+
+    public void setScreenEvent(boolean screenEvent) {
+        this.screenEvent = screenEvent;
+    }
+
+    public boolean isScreenEvent() {
+        return screenEvent;
     }
 }

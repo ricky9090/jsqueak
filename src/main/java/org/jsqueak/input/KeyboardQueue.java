@@ -1,6 +1,5 @@
 package org.jsqueak.input;
 
-import org.jsqueak.SqueakLogger;
 import org.jsqueak.SqueakVM;
 
 import java.awt.event.KeyEvent;
@@ -75,14 +74,10 @@ public class KeyboardQueue implements KeyListener {
 
     private int fModifierKeys = 0;
 
-    private KeyboardDispatchThread keyboardDispatchThread;
-
     private final Object lockObj = new Object();
 
     public KeyboardQueue(SqueakVM squeakVM) {
         fSqueakVM = squeakVM;
-        keyboardDispatchThread = new KeyboardDispatchThread(squeakVM);
-        keyboardDispatchThread.start();
     }
 
     // region JSqueak interface
@@ -188,8 +183,4 @@ public class KeyboardQueue implements KeyListener {
     }
 
     // endregion
-
-    public void stopDispatching() {
-        keyboardDispatchThread.setDispating(false);
-    }
 }

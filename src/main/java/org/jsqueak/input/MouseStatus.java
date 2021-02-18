@@ -43,25 +43,49 @@ public class MouseStatus extends MouseInputAdapter {
     public void mouseMoved(MouseEvent evt) {
         fX = evt.getX();
         fY = evt.getY();
-        fSqueakVM.wakeVMFromMouseThread();
+        //wakeVM();
     }
 
     @Override
     public void mouseDragged(MouseEvent evt) {
         fX = evt.getX();
         fY = evt.getY();
-        fSqueakVM.wakeVMFromMouseThread();
+        //wakeVM();
     }
 
     @Override
     public void mousePressed(MouseEvent evt) {
         fButtons |= mapButton(evt);
-        fSqueakVM.wakeVMFromMouseThread();
+        //wakeVM();
     }
 
     @Override
     public void mouseReleased(MouseEvent evt) {
         fButtons &= ~mapButton(evt);
-        fSqueakVM.wakeVMFromMouseThread();
+        //wakeVM();
+    }
+
+    /**
+     * Mouse event no longer wake VM,
+     * use InputNotifyThread to wake VM at fixed frequency
+     */
+    @Deprecated
+    private void wakeVM() {
+            synchronized (SqueakVM.class) {
+                fSqueakVM.setScreenEvent(true);
+                SqueakVM.class.notify();
+            }
+
+            synchronized (this) {
+                try {
+                    this.wait(0, 200);
+                } catch (InterruptedException e) {
+
+                }
+            }
+
+            synchronized (SqueakVM.class) {
+                fSqueakVM.setScreenEvent(false);
+            }
     }
 }

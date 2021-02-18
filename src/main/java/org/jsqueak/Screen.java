@@ -32,6 +32,7 @@ THE SOFTWARE.
 package org.jsqueak;
 
 
+import org.jsqueak.input.InputNotifyThread;
 import org.jsqueak.input.KeyboardQueue;
 import org.jsqueak.input.MouseStatus;
 
@@ -52,6 +53,8 @@ public class Screen {
     private int fDisplayBitsInt[];
     private MouseStatus fMouseStatus;
     private KeyboardQueue fKeyboardQueue;
+    private InputNotifyThread inputNotifyThread;
+
     private Timer fHeartBeat;
     private boolean fScreenChanged;
     private Object fVMSemaphore;
@@ -122,6 +125,9 @@ public class Screen {
         fDisplay.setFocusable(true);    // enable keyboard input
         fKeyboardQueue = new KeyboardQueue((SqueakVM) fVMSemaphore);
         fDisplay.addKeyListener(fKeyboardQueue);
+
+        inputNotifyThread = new InputNotifyThread((SqueakVM) fVMSemaphore);
+        inputNotifyThread.start();
 
         fDisplay.setOpaque(false);
         fDisplay.getRootPane().setDoubleBuffered(false);    // prevents losing intermediate redraws (how?!)
@@ -345,7 +351,7 @@ public class Screen {
     }
 
     public void exit() {
-        fKeyboardQueue.stopDispatching();
+        inputNotifyThread.quit();
         fFrame.setVisible(false);
         fFrame.dispose();
         if (WITH_HEARTBEAT) {

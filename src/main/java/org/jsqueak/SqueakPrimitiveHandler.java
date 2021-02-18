@@ -35,7 +35,7 @@ import java.util.Arrays;
  * <p>
  * Implements the indexed primitives for the Squeak VM.
  */
-class SqueakPrimitiveHandler {
+public class SqueakPrimitiveHandler {
     private final PrimitiveFailedException PrimitiveFailed = new PrimitiveFailedException();
 
     private final SqueakVM vm;
@@ -244,6 +244,7 @@ class SqueakPrimitiveHandler {
     }
 
     boolean doPrimitive(int index, int argCount) {
+        //SqueakLogger.log_D("doPrimitive: " + index + ", time: " + System.currentTimeMillis());
         success = true;
         switch (index) {
             // 0..127
@@ -1480,9 +1481,9 @@ class SqueakPrimitiveHandler {
         //         } catch (InterruptedException e) { }
         // TODO how to handle third-party interruptions?
         try {
-            synchronized (vm) {
-                while (!vm.screenEvent) {
-                    vm.wait(millis);
+            synchronized (SqueakVM.class) {
+                while (!vm.isScreenEvent()) {
+                    SqueakVM.class.wait(millis);
                 }
             }
         } catch (InterruptedException e) {
