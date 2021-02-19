@@ -100,5 +100,17 @@ public class InterpreterProxy {
         }
         return 0;
     }
+
+    public static void primitiveFail() {
+        SqueakVM.INSTANCE.setSuccess(false);
+    }
+
+    public static int SHL(int a, int b) {
+        return b > 31 ? 0 : a << b;
+    }
+    public static int SHR(int a, int b) {
+        return b > 31 ? 0 : a >>> b;
+    }
+
     //endregion
 }
