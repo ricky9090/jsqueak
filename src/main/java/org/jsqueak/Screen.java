@@ -169,7 +169,7 @@ public class Screen {
             image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
         } else {
             // now it is 8bit depth, using 256 color model
-            ColorModel colorModel = ScreenUtils.get256ColorModel();
+            ColorModel colorModel = ScreenUtils.get256ColorModelV2();
             image = new BufferedImage(colorModel, raster, false, null);
         }
         // TODO adding support for more color depth

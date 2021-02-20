@@ -1385,7 +1385,7 @@ public class SqueakPrimitiveHandler {
             }
         } else {
             // bind Screen
-            theDisplay = new Screen("Squeak", disp.width, disp.height, disp.depth, vm);
+            theDisplay = new Screen("JSqueak", disp.width, disp.height, disp.depth, vm);
             theDisplay.getFrame().addWindowListener(new WindowAdapter() {
                                                         public void windowClosing(WindowEvent evt) {
                                                             // TODO ask before shutdown
