@@ -12,7 +12,7 @@ seems to be deprecated, this repository is forked from repository of Victor Rodr
 https://github.com/victorr/jsqueak
 
 
-Now JSqueak can load and run a full version of Squeak 2.2 image, but will crash easily.
+I have made some changes/improvements to the vm, now JSqueak can load and run a full version of Squeak 2.2 image, but it crashes easily.
 
 ![Screenshot](jsqueak-demo.png)
 
@@ -60,6 +60,15 @@ http://stephane.ducasse.free.fr/FreeBooks/BlueBook/Bluebook.pdf
 **codefrau/SqueakJS**<br/>
 An HTML5 runtime engine for Squeak Smalltalk written in pure JavaScript by Vanessa Freudenberg.<br/>
 https://github.com/codefrau/SqueakJS
+
+**Potato VM**<br/>
+I found another fork/derivative of JSqueak named **Potato**, developed by HPI (Hasso-Plattner-Institut)<br/>
+It is also mentioned in the Document of another fork repo: [daitangio/jsqueak](https://github.com/daitangio/jsqueak) <br/>
+Potato's project announcement: https://news.squeak.org/2008/07/07/potato-version-of-jsqueak-from-hpi/ <br/>
+its document: http://potatovm.blogspot.com/ <br/>
+and its source code at sourceforge: https://sourceforge.net/p/potatovm/code <br/>
+
+*Victor Rodriguez, the owner of which this repo is forked from, was also participated in Potato's development. See: [AUTHORS](https://sourceforge.net/p/potatovm/code/HEAD/tree/trunk/AUTHORS)*
 
 **devhawala/ST80**<br/>
 A Smalltalk-80 virtual machine by Dr. Hans-Walter Latz. Based on the "Bluebook" specification, implemented in Java 8.<br/>
