@@ -374,4 +374,20 @@ public class SqueakObject {
 
         return bytes[zeroBasedIndex];
     }
+
+    public short getHash() {
+        return hash;
+    }
+
+    public short getFormat() {
+        return format;
+    }
+
+    public Object[] getPointers() {
+        return pointers;
+    }
+
+    public Object getBits() {
+        return bits;
+    }
 }

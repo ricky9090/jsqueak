@@ -23,6 +23,8 @@ THE SOFTWARE.
 
 package org.jsqueak;
 
+import org.jsqueak.uilts.ObjectUtils;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInput;
@@ -350,9 +352,9 @@ public class SqueakImage {
         System.out.println("Start installs at " + System.currentTimeMillis());
         for (int i = 0; i < otMaxUsed; i++) {
             // Don't need oldBaseAddr here**
-            if (i == 4715) {
+            if (i == 39823) {
                 // TODO change index to watch Object installing in debug mode
-                int temp = 0;  // foobar statement
+                int temp = 0;  // foobar statement, set break point here
             }
             ((SqueakObject) objectTable[i].get()).install(oopMap, ccArray, floatClass);
         }
@@ -398,7 +400,7 @@ public class SqueakImage {
     }
 
     /**
-     * Dump all Object of Image File
+     * Dump ALL Objects from image file for debugging purpose
      */
     private void dumpObjOfImage() {
         for (int i = 0; i < objectTable.length; i++) {
@@ -410,36 +412,21 @@ public class SqueakImage {
                 if ("a Point".equals(real.toString())) {
                     // dump a Point
                     SqueakObject point = (SqueakObject) real;
-                    if ("a Float".equals(point.pointers[0].toString())) {
-                        SqueakLogger.log_D("[" + i + "] create Point: "
-                                + ((SqueakObject)point.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point.pointers[1]).bits.toString());
-                    } else {
-                        SqueakLogger.log_D("[" + i + "] create Point: " + point.pointers[0] + "@" + point.pointers[1]);
-                    }
+                    SqueakLogger.log_D("[" + i + "] create Point: " + ObjectUtils.toString(point));
+
                 } else if ("a Rectangle".equals(real.toString())) {
                     // dump a Rectangle
                     SqueakObject rectangle = (SqueakObject) real;
-                    SqueakObject point1 = (SqueakObject) rectangle.pointers[0];
-                    SqueakObject point2 = (SqueakObject) rectangle.pointers[1];
-                    if ("a Float".equals(point1.pointers[0].toString())) {
-                        SqueakLogger.log_D("[" + i + "] create rectangle: "
-                                + ((SqueakObject)point1.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point1.pointers[1]).bits.toString()
-                                + " => "
-                                + ((SqueakObject)point2.pointers[0]).bits.toString() +  "@" + ((SqueakObject)point1.pointers[1]).bits.toString());
-                    } else {
-                        SqueakLogger.log_D("[" + i + "] create rectangle: "
-                                + point1.pointers[0] +  "@" + point1.pointers[1]
-                                + " => "
-                                + point2.pointers[0] +  "@" + point2.pointers[1]);
-                    }
+                    SqueakLogger.log_D("[" + i + "] create Rectangle: " + ObjectUtils.toString(rectangle));
 
                 } else if ("a Float".equals(real.toString())) {
                     // dump a Float
                     SqueakObject aFloat = (SqueakObject) real;
-                    SqueakLogger.log_D("[" + i + "] create float: " + aFloat.bits.toString());
+                    SqueakLogger.log_D("[" + i + "] create Float: " + ObjectUtils.toString(aFloat));
+
                 } else {
                     // we don't care about other object
-                    SqueakLogger.log_D("[" + i + "] create obj: " + real.toString());
+                    SqueakLogger.log_D("[" + i + "] Create Object: " + ObjectUtils.toString(real));
                 }
             }
         }
