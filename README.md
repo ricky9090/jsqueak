@@ -11,6 +11,9 @@ http://research.sun.com/projects/JSqueak
 seems to be deprecated, this repository is forked from repository of Victor Rodriguez:<br/>
 https://github.com/victorr/jsqueak
 
+
+Now JSqueak can load and run a full version of Squeak 2.2 image, but will crash easily.
+
 ![Screenshot](jsqueak-demo.png)
 
 
@@ -19,14 +22,12 @@ Currentlly, this repo is for studying purposes.
 
 I'm trying to add more primitive implementations to the vm to run a full version of Squeak 2.2
 
-### Noteable changes / improvements:
+### Notable changes / improvements:
 * Fix floating-point number issue. Now JSqueak can read floating-point numbers from image file correctly. 
   To verfiy this issue, try to move/resize the "Welcome to Mini Squeak 2.2" window (in mini.image).
 * Reduce input lag by using a separate thread to notify input event.
 * Beta support for Window resizing (Have to do "restore display" twice manually after resizing).
 * Beta support for 8-bit color display (Also have to "restore display" manually).
-
-Now JSqueak can load and run a full version of Squeak 2.2 image, but will crash easily.
 
 ### TODO
 * Add support for 16/32-bit color display
