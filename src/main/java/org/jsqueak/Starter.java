@@ -23,6 +23,9 @@ THE SOFTWARE.
 
 package org.jsqueak;
 
+import org.jsqueak.core.SqueakImage;
+import org.jsqueak.core.SqueakVM;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -68,15 +71,4 @@ public class Starter {
         SqueakVM.INSTANCE = vm;
         vm.run();
     }
-
-    //Simulation sim= new Simulation(vm);
-    //sim.run();
-    //if (sim.getState() == Executable.CANCELLED) {
-    //    Throwable t= (Throwable)sim.getReturnValue();
-    //    t.printStackTrace(System.err);
-    //}
-    //SqueakVM vm= locateStartableImage(args);
-    //if (vm != null) {
-    //vm.shutdown();
-    //}
 }

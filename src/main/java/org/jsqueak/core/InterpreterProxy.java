@@ -1,4 +1,4 @@
-package org.jsqueak;
+package org.jsqueak.core;
 
 /**
  * Implementation refer to SqueakJS

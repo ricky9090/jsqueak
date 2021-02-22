@@ -21,8 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package org.jsqueak;
+package org.jsqueak.core;
 
+import org.jsqueak.uilts.SqueakLogger;
 import org.jsqueak.uilts.ObjectUtils;
 
 import java.io.BufferedInputStream;

@@ -1,6 +1,6 @@
 package org.jsqueak.input;
 
-import org.jsqueak.SqueakVM;
+import org.jsqueak.core.SqueakVM;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;

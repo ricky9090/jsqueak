@@ -29,12 +29,15 @@ THE SOFTWARE.
  continued to help whenever I was particularly stuck during the project.
 */
 
-package org.jsqueak;
+package org.jsqueak.display;
 
 
+import org.jsqueak.uilts.SqueakLogger;
+import org.jsqueak.core.SqueakVM;
 import org.jsqueak.input.InputNotifyThread;
 import org.jsqueak.input.KeyboardQueue;
 import org.jsqueak.input.MouseStatus;
+import org.jsqueak.uilts.ScreenUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,7 +46,7 @@ import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 
 public class Screen {
-    Dimension fExtent;
+    public Dimension fExtent;
     private int fDepth;
     private JFrame fFrame;
     private JPanel contentView;

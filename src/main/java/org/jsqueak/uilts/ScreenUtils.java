@@ -1,4 +1,4 @@
-package org.jsqueak;
+package org.jsqueak.uilts;
 
 import java.awt.*;
 import java.awt.image.ColorModel;
@@ -8,20 +8,20 @@ import java.awt.image.IndexColorModel;
 public class ScreenUtils {
 
     // cf. http://doc.novsu.ac.ru/oreilly/java/awt/ch12_02.htm
-    private final static byte kComponents[] =
+    private final static byte[] kComponents =
             new byte[]{(byte) 255, 0, (byte) 240, (byte) 230,
                     (byte) 220, (byte) 210, (byte) 200, (byte) 190, (byte) 180, (byte) 170,
                     (byte) 160, (byte) 150, 110, 70, 30, 10};
 
-    private final static byte fComponents[] =
+    private final static byte[] fComponents =
             new byte[]{(byte) 255, (byte) 240, (byte) 230,
                     (byte) 220, (byte) 210, (byte) 200, (byte) 190, (byte) 180, (byte) 170,
                     (byte) 160, (byte) 150, 110, 70, 30, 10};
 
-    private final static byte sComponentsR[] = new byte[256];
-    private final static byte sComponentsG[] = new byte[256];
-    private final static byte sComponentsB[] = new byte[256];
-    private final static byte sComponentsA[] = new byte[256];
+    private final static byte[] sComponentsR = new byte[256];
+    private final static byte[] sComponentsG = new byte[256];
+    private final static byte[] sComponentsB = new byte[256];
+    private final static byte[] sComponentsA = new byte[256];
 
     private final static int[] palette = {
             0x00ff0000,       // Red

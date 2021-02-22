@@ -1,6 +1,6 @@
 package org.jsqueak.uilts;
 
-import org.jsqueak.SqueakObject;
+import org.jsqueak.core.SqueakObject;
 
 public class ObjectUtils {
 

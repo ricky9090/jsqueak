@@ -21,7 +21,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package org.jsqueak;
+package org.jsqueak.core;
+
+import org.jsqueak.uilts.SqueakLogger;
+import org.jsqueak.display.Screen;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -1361,7 +1364,7 @@ public class SqueakPrimitiveHandler {
         displayBitmap = disp.bits;
         vm.popN(argCount);
 
-        SqueakLogger.log("beDisplay: " + displayObj.toString());
+        SqueakLogger.log_D("beDisplay: " + displayObj.toString());
         SqueakLogger.log_D(SqueakLogger.LOG_BLOCK_HEADER);
         SqueakLogger.log_D("    | Display size: " + disp.width + "@" + disp.height);
         SqueakLogger.log_D("    | Display depth: " + disp.depth);
@@ -1645,7 +1648,7 @@ public class SqueakPrimitiveHandler {
             width = theDisplay.fExtent.width;
             height = theDisplay.fExtent.height;
         }
-        SqueakLogger.log("primitiveScreenSize width: " + width + " height: " + height);
+        SqueakLogger.log_D("primitiveScreenSize width: " + width + " height: " + height);
         return popNandPushIfOK(1, makePointWithXandY(SqueakVM.smallFromInt(width), SqueakVM.smallFromInt(height))); // actualScreenSize
     }
 

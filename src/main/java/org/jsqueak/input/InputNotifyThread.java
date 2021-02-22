@@ -1,7 +1,7 @@
 package org.jsqueak.input;
 
-import org.jsqueak.SqueakLogger;
-import org.jsqueak.SqueakVM;
+import org.jsqueak.uilts.SqueakLogger;
+import org.jsqueak.core.SqueakVM;
 
 public class InputNotifyThread extends Thread {
 

@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package org.jsqueak;
+package org.jsqueak.core;
 
 import java.io.FileInputStream;
 import java.util.Arrays;
@@ -87,13 +87,13 @@ public class SqueakVM {
 
     static Integer[] cachedInts; // reusable SmallIntegers save space, reduce GC traffic
 
-    static void initSmallIntegerCache() {
+    public static void initSmallIntegerCache() {
         cachedInts = new Integer[maxCachedInt - minCachedInt + 1];
         for (int i = minCachedInt; i <= maxCachedInt; i++)
             cachedInts[i - minCachedInt] = new Integer(i);
     }
 
-    class MethodCacheEntry {
+    public static class MethodCacheEntry {
         SqueakObject lkupClass;
         SqueakObject selector;
         SqueakObject method;

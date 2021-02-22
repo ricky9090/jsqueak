@@ -1,6 +1,6 @@
 package org.jsqueak.input;
 
-import org.jsqueak.SqueakVM;
+import org.jsqueak.core.SqueakVM;
 
 import javax.swing.event.MouseInputAdapter;
 import java.awt.event.MouseEvent;

@@ -1,5 +1,7 @@
 package org.jsqueak;
 
+import org.jsqueak.uilts.ScreenUtils;
+
 import java.awt.image.ColorModel;
 
 /**
@@ -25,6 +27,4 @@ public class SqueakConfig {
     public static String getImageName() {
         return "/image/" + MINI_IMAGE;
     }
-
-    public static final int DISPLAY_POLICY = 1;
 }

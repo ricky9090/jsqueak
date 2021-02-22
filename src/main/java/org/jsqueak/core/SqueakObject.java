@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-package org.jsqueak;
+package org.jsqueak.core;
 
 import java.util.Arrays;
 import java.util.Hashtable;
