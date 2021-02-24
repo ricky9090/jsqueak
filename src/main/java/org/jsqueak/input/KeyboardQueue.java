@@ -70,7 +70,7 @@ public class KeyboardQueue implements KeyListener {
 
     private final SqueakVM fSqueakVM;
 
-    private final List<Character> fCharQueue = new ArrayList();
+    private final List<Character> fCharQueue = new ArrayList<>();
 
     private int fModifierKeys = 0;
 
@@ -84,20 +84,15 @@ public class KeyboardQueue implements KeyListener {
 
     public int peek() {
         synchronized (lockObj) {
-            /*if (fCharQueue.size() > 0) {
-                System.out.println("peek: " + fCharQueue.get(0));
-            }*/
-
             return fCharQueue.isEmpty() ? 0 : keycode((Character) fCharQueue.get(0));
         }
     }
 
     public int next() {
         synchronized (lockObj) {
-            /*if (fCharQueue.size() > 0) {
-                System.out.println("next: " + fCharQueue.get(0));
-            }*/
-
+            if (fCharQueue.isEmpty()) {
+                return Integer.MIN_VALUE;
+            }
             return keycode((Character) fCharQueue.remove(0));
         }
     }
